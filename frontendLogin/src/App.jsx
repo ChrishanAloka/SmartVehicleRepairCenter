@@ -103,7 +103,7 @@ function App() {
                     <footer className="bg-dark text-white py-3 mt-auto">
                         <div className="container text-center">
                             <p className="mb-0">
-                                © {new Date().getFullYear()} Vehicle Service Center. All rights reserved.
+                                © {new Date().getFullYear()} ideasmart Solutions. All rights reserved.
                             </p>
                         </div>
                     </footer>
