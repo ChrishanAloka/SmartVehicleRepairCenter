@@ -29,6 +29,7 @@ const NavigationBar = () => {
                 <Navbar.Toggle aria-controls="navbar-nav" />
                 <Navbar.Collapse id="navbar-nav">
                     <Nav className="me-auto">
+                        <Nav.Link as={Link} to="/public">Public View</Nav.Link>
                         {isAuthenticated && (
                             <>
                                 {user?.role === 'admin' && <Nav.Link as={Link} to="/dashboard">Dashboard</Nav.Link>}
