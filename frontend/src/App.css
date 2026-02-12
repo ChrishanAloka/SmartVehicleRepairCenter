@@ -1,0 +1,216 @@
+/* Modern Variables */
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --info-color: #0dcaf0;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --light-color: #f8f9fa;
+    --dark-color: #212529;
+    --border-radius: 1rem;
+    --shadow-sm: 0 .125rem .25rem rgba(0, 0, 0, .075);
+    --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, .175);
+    --transition-base: all .2s ease-in-out;
+}
+
+body {
+    background-color: #f4f6f9;
+    /* Softer background */
+    color: #333;
+}
+
+/* Typography Enhancements */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+/* Card Styling */
+.card-modern {
+    border: none;
+    border-radius: var(--border-radius);
+    background: #ffffff;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+    transition: var(--transition-base);
+    overflow: hidden;
+}
+
+.card-modern:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.card-header-custom {
+    background: transparent;
+    border-bottom: 2px solid #f0f0f0;
+    padding: 1.5rem;
+    font-weight: 700;
+}
+
+/* Button Styling */
+.btn-pill {
+    border-radius: 50rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition: var(--transition-base);
+}
+
+.btn-lg-custom {
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
+}
+
+.btn-primary-gradient {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #0a58ca 100%);
+    border: none;
+}
+
+.btn-primary-gradient:hover {
+    background: linear-gradient(135deg, #0a58ca 0%, #084298 100%);
+    transform: translateY(-2px);
+}
+
+/* Status Badges */
+.badge-custom {
+    padding: 0.5em 1em;
+    border-radius: 30px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+/* Form Inputs */
+.form-control-lg {
+    border-radius: 0.8rem;
+    padding: 1rem 1.25rem;
+    font-size: 1rem;
+    border: 1px solid #dee2e6;
+    background-color: #fdfdfd;
+}
+
+.form-control-lg:focus {
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.15);
+    border-color: #8bb9fe;
+    background-color: #fff;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .card-modern {
+        margin-bottom: 1rem;
+    }
+
+    .display-4 {
+        font-size: 2.5rem;
+    }
+
+    /* Make tables scrollable/responsive nicely */
+    .table-responsive {
+        border-radius: var(--border-radius);
+    }
+}
+
+/* Utilities moved from components */
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.1) !important;
+}
+
+.pulse-animation {
+    animation: pulse 2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+}
+
+/* Queue Visualizer Specifics */
+.queue-container {
+    min-height: 80px;
+    max-height: 200px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.queue-man-icon {
+    display: inline-block;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fw-extrabold {
+    font-weight: 800;
+}
+
+.letter-spacing-1 {
+    letter-spacing: 1px;
+}
+
+.hover-bg-light:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.x-small {
+    font-size: 0.70rem;
+}
+
+.text-white-50 {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.ls-tight {
+    letter-spacing: -0.025em;
+}
+
+.scale-11 {
+    transform: scale(1.15);
+}
+
+.scale-12 {
+    transform: scale(1.25);
+}
