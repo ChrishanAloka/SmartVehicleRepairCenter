@@ -10,13 +10,10 @@ const BookingPage = () => {
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
-        email: '',
         idNumber: '',
         vehicleNumber: '',
         vehicleModel: '',
-        vehicleYear: '',
         bookingDate: moment().format('YYYY-MM-DD'),
-        problemDescription: ''
     });
     const [settings, setSettings] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -116,13 +113,10 @@ const BookingPage = () => {
             setFormData({
                 name: '',
                 phone: '',
-                email: '',
                 idNumber: '',
                 vehicleNumber: '',
                 vehicleModel: '',
-                vehicleYear: '',
                 bookingDate: moment().format('YYYY-MM-DD'),
-                problemDescription: ''
             });
 
             setTimeout(() => navigate('/'), 3000);
@@ -264,19 +258,6 @@ const BookingPage = () => {
                                 <Row>
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
-                                            <Form.Label>Email</Form.Label>
-                                            <Form.Control
-                                                type="email"
-                                                name="email"
-                                                value={formData.email}
-                                                onChange={handleChange}
-                                                placeholder="Enter email address (optional)"
-                                            />
-                                        </Form.Group>
-                                    </Col>
-
-                                    <Col md={6}>
-                                        <Form.Group className="mb-3">
                                             <Form.Label>ID Number *</Form.Label>
                                             <Form.Control
                                                 type="text"
@@ -287,13 +268,11 @@ const BookingPage = () => {
                                                 placeholder="Enter your ID number"
                                             />
                                             <Form.Text className="text-muted">
-                                                Used to retrieve your booking history
+                                                Used for history tracking
                                             </Form.Text>
                                         </Form.Group>
                                     </Col>
-                                </Row>
 
-                                <Row>
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
                                             <Form.Label>Vehicle Number *</Form.Label>
@@ -306,22 +285,6 @@ const BookingPage = () => {
                                                 placeholder="e.g., ABC-1234"
                                                 style={{ textTransform: 'uppercase' }}
                                             />
-                                            <Form.Text className="text-muted">
-                                                Your details will be saved for future bookings
-                                            </Form.Text>
-                                        </Form.Group>
-                                    </Col>
-
-                                    <Col md={6}>
-                                        <Form.Group className="mb-3">
-                                            <Form.Label>Vehicle Model</Form.Label>
-                                            <Form.Control
-                                                type="text"
-                                                name="vehicleModel"
-                                                value={formData.vehicleModel}
-                                                onChange={handleChange}
-                                                placeholder="e.g., Toyota Corolla"
-                                            />
                                         </Form.Group>
                                     </Col>
                                 </Row>
@@ -329,16 +292,20 @@ const BookingPage = () => {
                                 <Row>
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
-                                            <Form.Label>Vehicle Year</Form.Label>
-                                            <Form.Control
-                                                type="number"
-                                                name="vehicleYear"
-                                                value={formData.vehicleYear}
+                                            <Form.Label>Vehicle Category *</Form.Label>
+                                            <Form.Select
+                                                name="vehicleModel"
+                                                value={formData.vehicleModel}
                                                 onChange={handleChange}
-                                                placeholder="e.g., 2020"
-                                                min="1900"
-                                                max={new Date().getFullYear() + 1}
-                                            />
+                                                required
+                                            >
+                                                <option value="">Select Category</option>
+                                                <option value="Bike">Bike</option>
+                                                <option value="Scooter">Scooter</option>
+                                                <option value="Sports Bike">Sports Bike</option>
+                                                <option value="Off-Road Bike">Off-Road Bike</option>
+                                                <option value="Mini-Moto Bike">Mini-Moto Bike</option>
+                                            </Form.Select>
                                         </Form.Group>
                                     </Col>
 
@@ -352,44 +319,33 @@ const BookingPage = () => {
                                                 onChange={handleChange}
                                                 required
                                                 min={
-                                                    // Dynamic min: If they chose 'Book Later' or today is a holiday/after hours, min is tomorrow
                                                     (shopCurrentlyClosed || !moment(formData.bookingDate).isSame(moment(), 'day'))
                                                         ? moment().add(1, 'days').format('YYYY-MM-DD')
                                                         : moment().format('YYYY-MM-DD')
                                                 }
                                             />
-                                            {settings?.holidays?.length > 0 && (
-                                                <div className="mt-2 small text-muted">
-                                                    <strong>Upcoming Shop Holidays:</strong>
-                                                    <div className="d-flex flex-wrap gap-1 mt-1">
-                                                        {settings.holidays
-                                                            .filter(h => moment(h.date).isSameOrAfter(moment(), 'day'))
-                                                            .sort((a, b) => moment(a.date).diff(moment(b.date)))
-                                                            .slice(0, 3)
-                                                            .map((h, i) => (
-                                                                <Badge key={i} bg="light" text="dark" className="border">
-                                                                    {moment(h.date).format('MMM DD')}
-                                                                </Badge>
-                                                            ))}
-                                                    </div>
-                                                </div>
-                                            )}
                                         </Form.Group>
                                     </Col>
                                 </Row>
 
-                                <Form.Group className="mb-4">
-                                    <Form.Label>Problem Description *</Form.Label>
-                                    <Form.Control
-                                        as="textarea"
-                                        rows={4}
-                                        name="problemDescription"
-                                        value={formData.problemDescription}
-                                        onChange={handleChange}
-                                        required
-                                        placeholder="Please describe the issue with your vehicle..."
-                                    />
-                                </Form.Group>
+                                {settings?.holidays?.length > 0 && (
+                                    <div className="mb-4 small text-muted">
+                                        <strong>Upcoming Shop Holidays:</strong>
+                                        <div className="d-flex flex-wrap gap-1 mt-1">
+                                            {settings.holidays
+                                                .filter(h => moment(h.date).isSameOrAfter(moment(), 'day'))
+                                                .sort((a, b) => moment(a.date).diff(moment(b.date)))
+                                                .slice(0, 3)
+                                                .map((h, i) => (
+                                                    <Badge key={i} bg="light" text="dark" className="border">
+                                                        {moment(h.date).format('MMM DD')}
+                                                    </Badge>
+                                                ))}
+                                        </div>
+                                    </div>
+                                )}
+
+
 
                                 {settings && (
                                     <Alert variant="info">

@@ -16,7 +16,6 @@ const bookingSchema = new mongoose.Schema({
     },
     problemDescription: {
         type: String,
-        required: true,
         trim: true
     },
     status: {
