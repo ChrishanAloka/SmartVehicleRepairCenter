@@ -26,7 +26,7 @@ app.use('/api/settings', require('./routes/settingsRoutes'));
 
 // Health check
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'OK', message: 'Server is running' });
+    res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
 // Error handling
