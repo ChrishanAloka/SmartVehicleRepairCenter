@@ -118,6 +118,7 @@ const Bookings = () => {
             declined: { bg: 'danger', text: 'Declined' },
             not_today: { bg: 'secondary', text: 'Not Today' },
             completed: { bg: 'info', text: 'Completed' },
+            repaired: { bg: 'primary', text: 'Repaired' },
             cancelled: { bg: 'dark', text: 'Cancelled' }
         };
         const config = statusMap[status] || { bg: 'secondary', text: status };
@@ -318,7 +319,7 @@ const Bookings = () => {
                                                 <small className="text-muted">{booking.customer?.vehicleModel}</small>
                                             </td>
                                             <td>
-                                                <small>{booking.problemDescription.substring(0, 50)}...</small>
+                                                <small>{booking.problemDescription ? booking.problemDescription.substring(0, 50) : 'No description'}...</small>
                                             </td>
                                             <td>
                                                 {booking.technician ? (
@@ -356,6 +357,27 @@ const Bookings = () => {
                                                     >
                                                         Edit Status
                                                     </Button>
+                                                    {booking.status === 'accepted' && (
+                                                        <Button
+                                                            variant="success"
+                                                            size="sm"
+                                                            onClick={async () => {
+                                                                if (window.confirm('Mark this repair as done?')) {
+                                                                    try {
+                                                                        await bookingAPI.updateStatus(booking._id, {
+                                                                            status: 'repaired',
+                                                                            notes: 'Marked done from admin panel'
+                                                                        });
+                                                                        fetchBookings();
+                                                                    } catch (err) {
+                                                                        alert('Failed to update: ' + (err.response?.data?.message || err.message));
+                                                                    }
+                                                                }
+                                                            }}
+                                                        >
+                                                            Done
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -482,7 +504,8 @@ const Bookings = () => {
                             >
                                 <option value="pending">Pending (Waiting)</option>
                                 <option value="accepted">Accepted (In Service)</option>
-                                <option value="completed">Completed (Service Done)</option>
+                                <option value="repaired">Repaired (Done)</option>
+                                <option value="completed">Completed (Paid Out)</option>
                                 <option value="declined">Declined</option>
                                 <option value="not_today">Not Today</option>
                                 <option value="cancelled">Cancelled</option>

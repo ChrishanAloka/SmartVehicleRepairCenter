@@ -105,6 +105,7 @@ const TechnicianPortal = () => {
             declined: { bg: 'danger', text: 'Declined' },
             not_today: { bg: 'secondary', text: 'Not Today' },
             completed: { bg: 'info', text: 'Completed' },
+            repaired: { bg: 'primary', text: 'Repaired' },
             cancelled: { bg: 'dark', text: 'Cancelled' }
         };
         const config = statusMap[status] || { bg: 'secondary', text: status };
@@ -123,13 +124,22 @@ const TechnicianPortal = () => {
             ),
             other: bookings.filter(b =>
                 b.technician?._id === selectedTechnicianId &&
-                (b.status === 'declined' || b.status === 'not_today' || b.status === 'completed' || b.isPaidOut)
+                (b.status === 'declined' || b.status === 'not_today' || b.status === 'repaired' || b.status === 'completed' || b.isPaidOut)
             )
         };
     };
 
     const myBookings = getMyBookings();
     const selectedTechnician = technicians.find(t => t._id === selectedTechnicianId);
+
+    // Calculate today's coins (repaired or completed jobs today)
+    const todayCoins = bookings.filter(b =>
+        b.technician?._id === selectedTechnicianId &&
+        (b.status === 'repaired' || b.status === 'completed')
+    ).length;
+
+    // Only counts jobs that are strictly in 'accepted' status as active
+    const hasActiveJob = myBookings.accepted.length > 0;
 
     return (
         <Container fluid className="py-5 bg-light min-vh-100">
@@ -167,7 +177,7 @@ const TechnicianPortal = () => {
                         </Col>
                         {selectedTechnician && (
                             <Col md={6}>
-                                <div className="p-3 rounded-3 bg-primary bg-opacity-10 border border-primary border-opacity-25 d-flex align-items-center">
+                                <div className="flex-grow-1 p-3 rounded-3 bg-primary bg-opacity-10 border border-primary border-opacity-25 d-flex align-items-center">
                                     <div className="rounded-circle bg-primary text-white p-3 me-3">
                                         <FaUser size={20} />
                                     </div>
@@ -175,9 +185,6 @@ const TechnicianPortal = () => {
                                         <h5 className="mb-0 fw-bold text-primary">{selectedTechnician.name}</h5>
                                         <div className="d-flex gap-3 text-dark small mt-1">
                                             <span><strong>ID:</strong> {selectedTechnician.employeeId}</span>
-                                            {selectedTechnician.specialization && (
-                                                <span><strong>Role:</strong> {selectedTechnician.specialization}</span>
-                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -190,22 +197,43 @@ const TechnicianPortal = () => {
             {selectedTechnicianId && (
                 <div className="animate-fade-in">
                     {/* Active Jobs Quick View */}
-                    <Row className="mb-4">
+                    <Row className="mb-2">
                         <Col md={12}>
-                            <Card className="card-modern bg-primary-gradient text-white border-0">
-                                <Card.Body className="d-flex justify-content-between align-items-center py-4 px-4">
-                                    <div>
-                                        <h3 className="mb-1 fw-bold">My Active Shift</h3>
-                                        <p className="mb-0 opacity-75">Manage your current workload and incoming requests</p>
-                                    </div>
-                                    <div className="d-flex gap-3">
-                                        <div className="text-center px-4 py-2 bg-white bg-opacity-20 rounded-3 backdrop-blur">
-                                            <h4 className="mb-0 fw-bold">{myBookings.accepted.length}</h4>
-                                            <small className="text-uppercase" style={{ fontSize: '0.7rem' }}>In Progress</small>
+                            <Card className="card-modern bg-primary-gradient text-white border-0 overflow-hidden position-relative">
+                                {/* Decorative circle */}
+                                <div className="position-absolute translate-middle" style={{ top: '0', right: '-50px', width: '250px', height: '250px', background: 'white', opacity: '0.1', borderRadius: '50%' }}></div>
+
+                                <Card.Body className="d-flex flex-column flex-md-row justify-content-between align-items-center py-2 px-4 position-relative gap-3">
+                                    <div className="d-flex flex-column flex-sm-row align-items-center gap-3 text-center text-sm-start">
+                                        <div>
+                                            <h3 className="mb-0 fw-bold text-nowrap">My Active Shift</h3>
+                                            <p className="mb-0 opacity-90 small text-nowrap">Manage workload & rewards</p>
                                         </div>
-                                        <div className="text-center px-4 py-2 bg-warning text-dark rounded-3 shadow-sm">
-                                            <h4 className="mb-0 fw-bold">{myBookings.pending.length}</h4>
-                                            <small className="text-uppercase fw-bold" style={{ fontSize: '0.7rem' }}>Pending</small>
+                                        <div className="d-flex gap-2 border-start-sm ps-sm-3 ms-sm-1 justify-content-center">
+                                            <div className="coin-display-dark text-center py-1 px-3">
+                                                <div className="gold-coin-sm mb-1"></div>
+                                                <div className="lh-1">
+                                                    <small className="text-white text-opacity-75 d-block text-uppercase fw-bold" style={{ fontSize: '0.6rem' }}>Today</small>
+                                                    <span className="fw-black text-warning fs-4">+{todayCoins}</span>
+                                                </div>
+                                            </div>
+                                            <div className="coin-display-dark text-center py-1 px-3">
+                                                <div className="gold-coin-sm mb-1"></div>
+                                                <div className="lh-1">
+                                                    <small className="text-white text-opacity-75 d-block text-uppercase fw-bold" style={{ fontSize: '0.6rem' }}>Total</small>
+                                                    <span className="fw-black text-warning fs-4">{selectedTechnician.totalCoins || 0}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="d-flex gap-2 gap-md-3">
+                                        <div className="text-center px-3 px-md-4 py-2 bg-dark bg-opacity-40 rounded-3 border border-white border-opacity-25 shadow-sm">
+                                            <h3 className="mb-0 fw-bold text-white">{myBookings.accepted.length}</h3>
+                                            <small className="text-white text-opacity-90 text-uppercase fw-bold" style={{ fontSize: '0.65rem' }}>In Progress</small>
+                                        </div>
+                                        <div className="text-center px-3 px-md-4 py-2 bg-warning text-dark rounded-3 shadow-sm border border-warning">
+                                            <h3 className="mb-0 fw-bold">{myBookings.pending.length}</h3>
+                                            <small className="text-uppercase fw-bold" style={{ fontSize: '0.65rem' }}>Requests</small>
                                         </div>
                                     </div>
                                 </Card.Body>
@@ -264,8 +292,10 @@ const TechnicianPortal = () => {
                                                                 size="sm"
                                                                 className="btn-pill px-3 fw-bold shadow-sm"
                                                                 onClick={() => handleShowActionModal(booking, 'accepted')}
+                                                                disabled={hasActiveJob}
+                                                                title={hasActiveJob ? "Finish your current job first!" : "Accept Job"}
                                                             >
-                                                                Accept Is
+                                                                {hasActiveJob ? 'BUSY' : 'Accept Job'}
                                                             </Button>
                                                             <Button
                                                                 variant="light"
@@ -335,9 +365,19 @@ const TechnicianPortal = () => {
                                                         {booking.problemDescription}
                                                     </td>
                                                     <td className="text-end pe-4 py-3">
-                                                        <Badge bg="success" className="px-3 py-2 rounded-pill shadow-sm">
-                                                            IN SERVICE
-                                                        </Badge>
+                                                        <div className="d-flex gap-2 justify-content-end align-items-center">
+                                                            <Badge bg="success" className="px-3 py-2 rounded-pill shadow-sm">
+                                                                IN SERVICE
+                                                            </Badge>
+                                                            <Button
+                                                                variant="primary"
+                                                                size="sm"
+                                                                className="btn-pill px-3 fw-bold shadow-sm"
+                                                                onClick={() => handleShowActionModal(booking, 'repaired')}
+                                                            >
+                                                                DONE
+                                                            </Button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -367,6 +407,7 @@ const TechnicianPortal = () => {
                         {actionData.status === 'accepted' && <span className="text-success">Accept Job</span>}
                         {actionData.status === 'declined' && <span className="text-danger">Decline Job</span>}
                         {actionData.status === 'not_today' && <span className="text-warning">Postpone Job</span>}
+                        {actionData.status === 'repaired' && <span className="text-primary">Finish Repair</span>}
                     </Modal.Title>
                 </Modal.Header>
                 <Form onSubmit={handleActionSubmit}>
@@ -390,18 +431,14 @@ const TechnicianPortal = () => {
                         )}
 
                         <Form.Group className="mb-3">
-                            <Form.Label className="fw-bold small text-uppercase text-muted">Technician Notes {actionData.status === 'accepted' ? '(Optional)' : '(Required)'}</Form.Label>
+                            <Form.Label className="fw-bold small text-uppercase text-muted">Technician Notes (Optional)</Form.Label>
                             <Form.Control
                                 as="textarea"
                                 rows={3}
                                 value={actionData.notes}
                                 onChange={(e) => setActionData({ ...actionData, notes: e.target.value })}
-                                required={actionData.status !== 'accepted'}
-                                placeholder={
-                                    actionData.status === 'accepted'
-                                        ? 'Add any diagnosis or repair notes...'
-                                        : 'Please explain the reason...'
-                                }
+                                required={false}
+                                placeholder="Add any diagnosis or repair notes..."
                                 className="form-control-lg fs-6"
                             />
                         </Form.Group>
@@ -422,7 +459,8 @@ const TechnicianPortal = () => {
                         <Button
                             variant={
                                 actionData.status === 'accepted' ? 'success' :
-                                    actionData.status === 'declined' ? 'danger' : 'warning'
+                                    actionData.status === 'repaired' ? 'primary' :
+                                        actionData.status === 'declined' ? 'danger' : 'warning'
                             }
                             type="submit"
                             className="btn-pill px-4 fw-bold shadow-sm"
@@ -432,6 +470,101 @@ const TechnicianPortal = () => {
                     </Modal.Footer>
                 </Form>
             </Modal>
+
+            <style jsx>{`
+                .card-modern {
+                    border: none;
+                    border-radius: 1.5rem;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+                    transition: transform 0.3s ease;
+                }
+                .bg-primary-gradient {
+                    background: linear-gradient(135deg, #0d6efd 0%, #0044cc 100%);
+                }
+                @media (min-width: 576px) {
+                    .border-start-sm {
+                        border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
+                    }
+                }
+                .backdrop-blur {
+                    backdrop-filter: blur(10px);
+                    -webkit-backdrop-filter: blur(10px);
+                }
+                .btn-pill {
+                    border-radius: 50rem;
+                }
+                .letter-spacing-1 {
+                    letter-spacing: 1px;
+                }
+                .fw-black {
+                    font-weight: 900;
+                }
+                .gold-coin {
+                    width: 32px;
+                    height: 32px;
+                    background: radial-gradient(circle at 30% 30%, #ffd700, #daa520);
+                    border-radius: 50%;
+                    display: inline-block;
+                    margin-bottom: 5px;
+                    box-shadow: 0 4px 10px rgba(218, 165, 32, 0.4), inset -2px -2px 5px rgba(0,0,0,0.2);
+                    animation: spin-coin 3s linear infinite;
+                    transform-style: preserve-3d;
+                    position: relative;
+                    border: 2px solid #b8860b;
+                }
+
+                .gold-coin:before {
+                    content: '★';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: 16px;
+                    color: #b8860b;
+                    text-shadow: 1px 1px 0 rgba(255,255,255,0.3);
+                }
+
+                @keyframes spin-coin {
+                    0% { transform: rotateY(0deg); }
+                    100% { transform: rotateY(360deg); }
+                }
+
+                .coin-display {
+                    background: white;
+                    padding: 10px 20px;
+                    border-radius: 1rem;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+                    border: 1px solid rgba(255, 215, 0, 0.2);
+                }
+                .coin-display-dark {
+                    background: rgba(0, 0, 0, 0.3);
+                    padding: 8px 15px;
+                    border-radius: 0.8rem;
+                    border: 1px solid rgba(255, 215, 0, 0.15);
+                    min-width: 65px;
+                }
+                .gold-coin-sm {
+                    width: 28px;
+                    height: 28px;
+                    background: radial-gradient(circle at 30% 30%, #ffd700, #daa520);
+                    border-radius: 50%;
+                    display: inline-block;
+                    box-shadow: 0 2px 5px rgba(218, 165, 32, 0.4);
+                    animation: spin-coin 3s linear infinite;
+                    transform-style: preserve-3d;
+                    position: relative;
+                    border: 1px solid #b8860b;
+                }
+                .gold-coin-sm:before {
+                    content: '★';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: 14px;
+                    color: #b8860b;
+                }
+            `}</style>
         </Container>
     );
 };

@@ -42,6 +42,10 @@ const technicianSchema = new mongoose.Schema({
     },
     lastCheckIn: {
         type: Date
+    },
+    totalCoins: {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true

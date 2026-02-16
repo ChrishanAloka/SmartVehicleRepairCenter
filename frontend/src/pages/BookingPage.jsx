@@ -13,6 +13,7 @@ const BookingPage = () => {
         idNumber: '',
         vehicleNumber: '',
         vehicleModel: '',
+        problemDescription: '',
         bookingDate: moment().format('YYYY-MM-DD'),
     });
     const [settings, setSettings] = useState(null);
@@ -40,7 +41,6 @@ const BookingPage = () => {
 
                 const isClosed = holidayClosed || afterHours;
                 setShopCurrentlyClosed(isClosed);
-                // We keep viewMode at 'status' to let users choose between Live Queue and Future Date
             } catch (err) {
                 console.error('Error checking status:', err);
             }
@@ -68,14 +68,12 @@ const BookingPage = () => {
             setError('');
             const selectedDate = moment(value).format('YYYY-MM-DD');
 
-            // Check if selected date is a holiday
             const holiday = settings?.holidays?.find(h =>
                 moment(h.date).format('YYYY-MM-DD') === selectedDate
             );
 
             if (holiday) {
                 setError(`The shop is closed on ${moment(selectedDate).format('MMMM Do')} for ${holiday.reason || 'a holiday'}. Please choose another date.`);
-                // Reset to tomorrow if today or previous date was picked
                 setFormData({ ...formData, [name]: moment().add(1, 'days').format('YYYY-MM-DD') });
                 return;
             }
@@ -91,7 +89,6 @@ const BookingPage = () => {
         setLoading(true);
 
         try {
-            // 1. Holiday validation
             const isOpenResponse = await settingsAPI.isOpen(formData.bookingDate);
             if (!isOpenResponse.data.isOpen) {
                 setError('The shop is closed on the selected date (Holiday/Day-off). Please choose another date.');
@@ -99,7 +96,6 @@ const BookingPage = () => {
                 return;
             }
 
-            // 2. Working hours validation for same-day bookings
             const isToday = moment(formData.bookingDate).isSame(moment(), 'day');
             if (isToday && !isWithinWorkingHours()) {
                 setError(`Same-day bookings are only accepted during working hours (${settings.openingTime} - ${settings.closingTime}). Please book for tomorrow or visit us when we open.`);
@@ -116,6 +112,7 @@ const BookingPage = () => {
                 idNumber: '',
                 vehicleNumber: '',
                 vehicleModel: '',
+                problemDescription: '',
                 bookingDate: moment().format('YYYY-MM-DD'),
             });
 
@@ -328,6 +325,19 @@ const BookingPage = () => {
                                     </Col>
                                 </Row>
 
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Problem Description *</Form.Label>
+                                    <Form.Control
+                                        as="textarea"
+                                        rows={3}
+                                        name="problemDescription"
+                                        value={formData.problemDescription}
+                                        onChange={handleChange}
+                                        required
+                                        placeholder="Briefly describe the issue with your vehicle"
+                                    />
+                                </Form.Group>
+
                                 {settings?.holidays?.length > 0 && (
                                     <div className="mb-4 small text-muted">
                                         <strong>Upcoming Shop Holidays:</strong>
@@ -344,8 +354,6 @@ const BookingPage = () => {
                                         </div>
                                     </div>
                                 )}
-
-
 
                                 {settings && (
                                     <Alert variant="info">

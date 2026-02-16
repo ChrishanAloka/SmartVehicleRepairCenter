@@ -229,7 +229,33 @@ const updateBookingStatus = async (req, res) => {
             if (!technician) {
                 return res.status(404).json({ message: 'Technician not found' });
             }
+
+            // Logic for "one job at a time"
+            if (status === 'accepted') {
+                const activeJob = await Booking.findOne({
+                    technician: technicianId,
+                    status: 'accepted',
+                    _id: { $ne: req.params.id } // Don't count current booking if it's already accepted
+                });
+
+                if (activeJob) {
+                    return res.status(400).json({
+                        message: 'You already have an active job. Please complete it before accepting a new one.'
+                    });
+                }
+            }
+
             booking.technician = technicianId;
+
+            // Award coins when repair is marked as done
+            if (status === 'repaired' && booking.status !== 'repaired') {
+                technician.totalCoins = (technician.totalCoins || 0) + 1;
+                await technician.save();
+            }
+        }
+
+        if (status === 'accepted' && booking.status !== 'accepted') {
+            booking.acceptedAt = new Date();
         }
 
         booking.status = status;
@@ -332,6 +358,55 @@ const cancelExpiredBookings = async (req, res) => {
     }
 };
 
+// @desc    Submit booking review
+// @route   POST /api/bookings/:id/review
+// @access  Public
+const submitReview = async (req, res) => {
+    try {
+        const { rating, reviewComment } = req.body;
+        const booking = await Booking.findById(req.params.id);
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+
+        if (booking.status !== 'completed') {
+            return res.status(400).json({ message: 'Can only review completed services' });
+        }
+
+        booking.rating = rating;
+        booking.reviewComment = reviewComment;
+        await booking.save();
+
+        res.json({ message: 'Review submitted successfully', booking });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Quick rebook a postponed booking
+// @route   PUT /api/bookings/:id/rebook
+// @access  Public
+const quickRebook = async (req, res) => {
+    try {
+        const { bookingDate } = req.body;
+        const booking = await Booking.findById(req.params.id);
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+
+        booking.bookingDate = bookingDate;
+        booking.status = 'pending';
+        booking.technician = null;
+
+        await booking.save();
+        res.json({ message: 'Rebooked successfully', booking });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     createBooking,
     getBookings,
@@ -340,5 +415,7 @@ module.exports = {
     updateBookingStatus,
     payoutBooking,
     getCustomerBookings,
-    cancelExpiredBookings
+    cancelExpiredBookings,
+    submitReview,
+    quickRebook
 };

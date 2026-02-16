@@ -20,7 +20,7 @@ const bookingSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'accepted', 'declined', 'not_today', 'completed', 'cancelled'],
+        enum: ['pending', 'accepted', 'declined', 'not_today', 'repaired', 'completed', 'cancelled'],
         default: 'pending'
     },
     isPaidOut: {
@@ -38,6 +38,18 @@ const bookingSchema = new mongoose.Schema({
     cancelledReason: {
         type: String,
         trim: true
+    },
+    rating: {
+        type: Number,
+        min: 1,
+        max: 5
+    },
+    reviewComment: {
+        type: String,
+        trim: true
+    },
+    acceptedAt: {
+        type: Date
     }
 }, {
     timestamps: true

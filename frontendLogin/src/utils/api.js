@@ -52,7 +52,9 @@ export const bookingAPI = {
     create: (data) => api.post('/bookings', data),
     updateStatus: (id, data) => api.put(`/bookings/${id}/status`, data),
     payout: (id, amount) => api.put(`/bookings/${id}/payout`, { amount }),
-    cancelExpired: () => api.post('/bookings/cancel-expired')
+    cancelExpired: () => api.post('/bookings/cancel-expired'),
+    submitReview: (id, data) => api.post(`/bookings/${id}/review`, data),
+    rebook: (id, data) => api.put(`/bookings/${id}/rebook`, data)
 };
 
 // Invoice API

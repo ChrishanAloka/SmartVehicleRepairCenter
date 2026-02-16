@@ -3,7 +3,7 @@ import { Container, Row, Col, Card, Button, Badge, Alert, Spinner } from 'react-
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { technicianAPI, bookingAPI, settingsAPI } from '../utils/api';
-import { FaTools, FaCalendarPlus, FaCheckCircle, FaClock, FaUsers, FaUser } from 'react-icons/fa';
+import { FaTools, FaCalendarPlus, FaCheckCircle, FaClock, FaUsers, FaUser, FaSearch } from 'react-icons/fa';
 import moment from 'moment';
 
 const PublicView = () => {
@@ -76,8 +76,15 @@ const PublicView = () => {
         }).length;
     };
 
-    const QueueVisualizer = ({ title, count, icon, color, status }) => {
-        const icons = Array.from({ length: count }, (_, i) => i);
+    const formatStopwatch = (startTime) => {
+        const diff = moment.duration(moment().diff(moment(startTime)));
+        const hours = Math.floor(diff.asHours());
+        const minutes = diff.minutes();
+        return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    };
+
+    const QueueVisualizer = ({ title, bookingList, icon, color, status }) => {
+        const count = bookingList.length;
 
         return (
             <Card className="card-modern h-100 border-0 mb-4 bg-white">
@@ -95,13 +102,18 @@ const PublicView = () => {
                         <h2 className={`fw-extrabold mb-0 text-${color}`}>{count}</h2>
                     </div>
 
-                    <div className="queue-container d-flex flex-wrap gap-2 py-2">
+                    <div className="queue-container d-flex flex-wrap gap-3 py-2">
                         {count === 0 ? (
                             <div className="text-muted small fst-italic py-3 opacity-50">No one in this queue</div>
                         ) : (
-                            icons.map(i => (
-                                <div key={i} className={`queue-man-icon text-${color} pulse-animation`}>
-                                    <FaUser size={24} />
+                            bookingList.map((booking, i) => (
+                                <div key={i} className="text-center">
+                                    <div className={`queue-man-icon text-${color} pulse-animation mb-1`}>
+                                        <FaUser size={24} />
+                                    </div>
+                                    <div className="text-muted fw-bold" style={{ fontSize: '0.65rem' }}>
+                                        {formatStopwatch(booking.status === 'accepted' ? (booking.acceptedAt || booking.createdAt) : booking.createdAt)}
+                                    </div>
                                 </div>
                             ))
                         )}
@@ -141,27 +153,25 @@ const PublicView = () => {
                             </Badge>
                         )}
                     </div>
-                    <div className="d-flex justify-content-center gap-3 flex-wrap">
-                        <Link to="/booking">
-                            <Button size="lg" className="btn-primary-gradient btn-pill shadow-lg border-0 px-5 py-3">
-                                <FaCalendarPlus className="me-2" />
-                                BOOK NOW
-                            </Button>
-                        </Link>
-                        <Link to="/customer-lookup">
-                            <Button variant="light" size="lg" className="btn-pill shadow-sm border px-5 py-3 text-primary fw-bold hover-lift">
-                                <FaUsers className="me-2" />
-                                CHECK MY STATUS
-                            </Button>
-                        </Link>
-                        {isAuthenticated && (
-                            <Link to="/attendance">
-                                <Button variant="light" size="lg" className="btn-pill shadow-sm border px-5 py-3 text-secondary fw-bold hover-lift">
-                                    <FaCheckCircle className="me-2" />
-                                    STAFF ATTENDANCE
-                                </Button>
-                            </Link>
-                        )}
+                    <div className="d-flex justify-content-center gap-3">
+                        <Button
+                            as={Link}
+                            to="/booking"
+                            variant="primary"
+                            className="btn-pill px-4 py-2 fw-bold shadow-sm"
+                        >
+                            <FaCalendarPlus className="me-2" />
+                            BOOK NOW
+                        </Button>
+                        <Button
+                            as={Link}
+                            to="/customer-lookup"
+                            variant="outline-primary"
+                            className="btn-pill px-4 py-2 fw-bold shadow-sm bg-white"
+                        >
+                            <FaSearch className="me-2" />
+                            CHECK STATUS
+                        </Button>
                     </div>
                 </div>
 
@@ -178,7 +188,7 @@ const PublicView = () => {
                         <Col lg={6}>
                             <QueueVisualizer
                                 title="Waiting List"
-                                count={getPendingBookings().length}
+                                bookingList={getPendingBookings()}
                                 icon={<FaClock className="text-warning text-opacity-75" size={24} />}
                                 color="warning"
                                 status="Next in line"
@@ -187,7 +197,7 @@ const PublicView = () => {
                         <Col lg={6}>
                             <QueueVisualizer
                                 title="On The Floor"
-                                count={getServicingBookings().length}
+                                bookingList={getServicingBookings()}
                                 icon={<FaTools className="text-success text-opacity-75" size={24} />}
                                 color="success"
                                 status="Being Serviced"
@@ -336,8 +346,8 @@ const PublicView = () => {
                                 <div className="rounded-circle bg-info bg-opacity-10 p-3 me-4">
                                     <FaTools className="text-info" size={24} />
                                 </div>
-                                <div>
-                                    <h6 className="fw-bold text-dark mb-1 text-uppercase small letter-spacing-1">Service Quality</h6>
+                                <div className="d-flex flex-column gap-1">
+                                    <h6 className="fw-bold text-dark mb-0 text-uppercase small letter-spacing-1">Service Quality</h6>
                                     <p className="mb-0 text-muted">
                                         Professional repairs with real-time status tracking.
                                     </p>

@@ -8,7 +8,9 @@ const {
     updateBookingStatus,
     payoutBooking,
     getCustomerBookings,
-    cancelExpiredBookings
+    cancelExpiredBookings,
+    submitReview,
+    quickRebook
 } = require('../controllers/bookingController');
 const { protect } = require('../middleware/auth');
 
@@ -25,5 +27,7 @@ router.route('/:id')
 
 router.put('/:id/status', updateBookingStatus);
 router.put('/:id/payout', protect, payoutBooking);
+router.post('/:id/review', submitReview);
+router.put('/:id/rebook', quickRebook);
 
 module.exports = router;

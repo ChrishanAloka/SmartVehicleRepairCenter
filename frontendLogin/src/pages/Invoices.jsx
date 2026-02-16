@@ -43,9 +43,11 @@ const Invoices = () => {
 
     const fetchAcceptedBookings = async () => {
         try {
-            const response = await bookingAPI.getAll({ status: 'accepted' });
-            // Filter only non-paid bookings
-            const unpaid = response.data.filter(b => !b.isPaidOut);
+            const response = await bookingAPI.getAll();
+            // Filter only non-paid bookings that are either accepted or repaired
+            const unpaid = response.data.filter(b =>
+                (b.status === 'accepted' || b.status === 'repaired') && !b.isPaidOut
+            );
             setAcceptedBookings(unpaid);
         } catch (error) {
             console.error('Error fetching bookings:', error);

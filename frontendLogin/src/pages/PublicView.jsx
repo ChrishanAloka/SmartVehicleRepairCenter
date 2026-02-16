@@ -76,8 +76,15 @@ const PublicView = () => {
         }).length;
     };
 
-    const QueueVisualizer = ({ title, count, icon, color, status }) => {
-        const icons = Array.from({ length: count }, (_, i) => i);
+    const formatStopwatch = (startTime) => {
+        const diff = moment.duration(moment().diff(moment(startTime)));
+        const hours = Math.floor(diff.asHours());
+        const minutes = diff.minutes();
+        return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    };
+
+    const QueueVisualizer = ({ title, bookingList, icon, color, status }) => {
+        const count = bookingList.length;
 
         return (
             <Card className="card-modern h-100 border-0 mb-4 bg-white">
@@ -95,13 +102,18 @@ const PublicView = () => {
                         <h2 className={`fw-extrabold mb-0 text-${color}`}>{count}</h2>
                     </div>
 
-                    <div className="queue-container d-flex flex-wrap gap-2 py-2">
+                    <div className="queue-container d-flex flex-wrap gap-3 py-2">
                         {count === 0 ? (
                             <div className="text-muted small fst-italic py-3 opacity-50">No one in this queue</div>
                         ) : (
-                            icons.map(i => (
-                                <div key={i} className={`queue-man-icon text-${color} pulse-animation`}>
-                                    <FaUser size={24} />
+                            bookingList.map((booking, i) => (
+                                <div key={i} className="text-center">
+                                    <div className={`queue-man-icon text-${color} pulse-animation mb-1`}>
+                                        <FaUser size={24} />
+                                    </div>
+                                    <div className="text-muted fw-bold" style={{ fontSize: '0.65rem' }}>
+                                        {formatStopwatch(booking.status === 'accepted' ? (booking.acceptedAt || booking.createdAt) : booking.createdAt)}
+                                    </div>
                                 </div>
                             ))
                         )}
@@ -178,7 +190,7 @@ const PublicView = () => {
                         <Col lg={6}>
                             <QueueVisualizer
                                 title="Waiting List"
-                                count={getPendingBookings().length}
+                                bookingList={getPendingBookings()}
                                 icon={<FaClock className="text-warning text-opacity-75" size={24} />}
                                 color="warning"
                                 status="Next in line"
@@ -187,7 +199,7 @@ const PublicView = () => {
                         <Col lg={6}>
                             <QueueVisualizer
                                 title="On The Floor"
-                                count={getServicingBookings().length}
+                                bookingList={getServicingBookings()}
                                 icon={<FaTools className="text-success text-opacity-75" size={24} />}
                                 color="success"
                                 status="Being Serviced"

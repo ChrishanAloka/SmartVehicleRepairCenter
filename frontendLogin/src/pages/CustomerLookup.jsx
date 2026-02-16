@@ -1,8 +1,28 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert, Table, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Alert, Table, Badge, Modal } from 'react-bootstrap';
 import { bookingAPI } from '../utils/api';
-import { FaSearch, FaUser, FaCar, FaClock, FaTools } from 'react-icons/fa';
+import { FaSearch, FaUser, FaCar, FaClock, FaTools, FaStar, FaRegStar } from 'react-icons/fa';
 import moment from 'moment';
+
+const StarRating = ({ rating, setRating, interactive = false }) => {
+    return (
+        <div className="d-flex gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <span
+                    key={star}
+                    onClick={() => interactive && setRating(star)}
+                    style={{ cursor: interactive ? 'pointer' : 'default' }}
+                >
+                    {star <= rating ? (
+                        <FaStar className="text-warning" size={interactive ? 24 : 16} />
+                    ) : (
+                        <FaRegStar className="text-muted" size={interactive ? 24 : 16} />
+                    )}
+                </span>
+            ))}
+        </div>
+    );
+};
 
 const CustomerLookup = () => {
     const [identifier, setIdentifier] = useState('');
@@ -10,6 +30,13 @@ const CustomerLookup = () => {
     const [allTodayBookings, setAllTodayBookings] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showReviewModal, setShowReviewModal] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState(null);
+    const [reviewForm, setReviewForm] = useState({ rating: 0, comment: '' });
+    const [submittingReview, setSubmittingReview] = useState(false);
+    const [showRebookModal, setShowRebookModal] = useState(false);
+    const [rebookDate, setRebookDate] = useState(moment().format('YYYY-MM-DD'));
+    const [submittingRebook, setSubmittingRebook] = useState(false);
 
     const handleSearch = async (e) => {
         e.preventDefault();
@@ -36,6 +63,59 @@ const CustomerLookup = () => {
         }
     };
 
+    const handleOpenReview = (booking) => {
+        setSelectedBooking(booking);
+        setReviewForm({ rating: booking.rating || 0, comment: booking.reviewComment || '' });
+        setShowReviewModal(true);
+    };
+
+    const handleSubmitReview = async () => {
+        if (!selectedBooking) return;
+        if (reviewForm.rating === 0) {
+            alert('Please select a rating before submitting.');
+            return;
+        }
+        setSubmittingReview(true);
+        try {
+            await bookingAPI.submitReview(selectedBooking._id, {
+                rating: reviewForm.rating,
+                reviewComment: reviewForm.comment
+            });
+            setShowReviewModal(false);
+            // Refresh data
+            const event = { preventDefault: () => { } };
+            handleSearch(event);
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to submit review');
+        } finally {
+            setSubmittingReview(false);
+        }
+    };
+
+    const handleOpenRebook = (booking) => {
+        setSelectedBooking(booking);
+        setRebookDate(moment().format('YYYY-MM-DD'));
+        setShowRebookModal(true);
+    };
+
+    const handleRebook = async () => {
+        if (!selectedBooking) return;
+        setSubmittingRebook(true);
+        try {
+            await bookingAPI.rebook(selectedBooking._id, {
+                bookingDate: rebookDate
+            });
+            setShowRebookModal(false);
+            // Refresh data
+            const event = { preventDefault: () => { } };
+            handleSearch(event);
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to rebook');
+        } finally {
+            setSubmittingRebook(false);
+        }
+    };
+
     const getStatusBadge = (status) => {
         const statusMap = {
             pending: { bg: 'warning', text: 'Waiting' },
@@ -43,6 +123,7 @@ const CustomerLookup = () => {
             declined: { bg: 'danger', text: 'Declined' },
             not_today: { bg: 'secondary', text: 'Postponed' },
             completed: { bg: 'info', text: 'Completed' },
+            repaired: { bg: 'primary', text: 'Repaired' },
             cancelled: { bg: 'dark', text: 'Cancelled' }
         };
         const config = statusMap[status] || { bg: 'secondary', text: status };
@@ -52,7 +133,7 @@ const CustomerLookup = () => {
     const getPendingBookings = () => {
         if (!customerData || !customerData.bookings) return [];
         return customerData.bookings.filter(b =>
-            (b.status === 'pending' || b.status === 'accepted') && !b.isPaidOut
+            (b.status === 'pending' || b.status === 'accepted' || b.status === 'repaired') && !b.isPaidOut
         );
     };
 
@@ -280,6 +361,7 @@ const CustomerLookup = () => {
                                                 <th className="py-3 border-0">Technician</th>
                                                 <th className="py-3 border-0">Issue</th>
                                                 <th className="py-3 border-0">Status</th>
+                                                <th className="py-3 border-0">Rating</th>
                                                 <th className="pe-4 py-3 text-end border-0">Amount</th>
                                             </tr>
                                         </thead>
@@ -302,6 +384,43 @@ const CustomerLookup = () => {
                                                             )}
                                                         </td>
                                                         <td className="py-3">{getStatusBadge(booking.status)}</td>
+                                                        <td className="py-3">
+                                                            {booking.status === 'not_today' ? (
+                                                                <Button
+                                                                    variant="success"
+                                                                    size="sm"
+                                                                    className="rounded-pill px-3 fw-bold"
+                                                                    onClick={() => handleOpenRebook(booking)}
+                                                                >
+                                                                    QUICK BOOK
+                                                                </Button>
+                                                            ) : (
+                                                                booking.rating ? (
+                                                                    <div className="d-flex align-items-center gap-2">
+                                                                        <StarRating rating={booking.rating} />
+                                                                        <Button
+                                                                            variant="link"
+                                                                            size="sm"
+                                                                            className="p-0 text-decoration-none x-small fw-bold"
+                                                                            onClick={() => handleOpenReview(booking)}
+                                                                        >
+                                                                            EDIT
+                                                                        </Button>
+                                                                    </div>
+                                                                ) : (
+                                                                    booking.status === 'completed' ? (
+                                                                        <Button
+                                                                            variant="outline-primary"
+                                                                            size="sm"
+                                                                            className="rounded-pill px-3"
+                                                                            onClick={() => handleOpenReview(booking)}
+                                                                        >
+                                                                            Rate Service
+                                                                        </Button>
+                                                                    ) : '-'
+                                                                )
+                                                            )}
+                                                        </td>
                                                         <td className="pe-4 py-3 text-end fw-bold">
                                                             {booking.isPaidOut && booking.amount ? (
                                                                 <span>LKR {booking.amount.toLocaleString()}</span>
@@ -324,6 +443,81 @@ const CustomerLookup = () => {
                     </div>
                 </div>
             )}
+            {/* Review Modal */}
+            <Modal show={showReviewModal} onHide={() => setShowReviewModal(false)} centered>
+                <Modal.Header closeButton className="border-0">
+                    <Modal.Title className="fw-bold">Rate Our Service</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="p-4">
+                    <div className="text-center mb-4">
+                        <p className="text-muted">How was your experience with us?</p>
+                        <div className="d-flex justify-content-center">
+                            <StarRating
+                                rating={reviewForm.rating}
+                                setRating={(r) => setReviewForm({ ...reviewForm, rating: r })}
+                                interactive={true}
+                            />
+                        </div>
+                    </div>
+                    <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold small text-muted text-uppercase">Your Comment</Form.Label>
+                        <Form.Control
+                            as="textarea"
+                            rows={3}
+                            placeholder="Tell us what you liked (optional)"
+                            value={reviewForm.comment}
+                            onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                            className="bg-light border-0"
+                        />
+                    </Form.Group>
+                </Modal.Body>
+                <Modal.Footer className="border-0 p-4 pt-0">
+                    <Button variant="light" className="btn-pill px-4" onClick={() => setShowReviewModal(false)}>
+                        Skip
+                    </Button>
+                    <Button
+                        variant="primary"
+                        className="btn-primary-gradient btn-pill px-4 shadow-sm"
+                        onClick={handleSubmitReview}
+                        disabled={submittingReview}
+                    >
+                        {submittingReview ? 'SUBMITTING...' : 'SUBMIT REVIEW'}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Rebook Modal */}
+            <Modal show={showRebookModal} onHide={() => setShowRebookModal(false)} centered>
+                <Modal.Header closeButton className="border-0">
+                    <Modal.Title className="fw-bold">Reschedule Booking</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="p-4">
+                    <p className="text-muted">Select a new date for your postponed service.</p>
+                    <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold small text-muted text-uppercase">New Service Date</Form.Label>
+                        <Form.Control
+                            type="date"
+                            value={rebookDate}
+                            onChange={(e) => setRebookDate(e.target.value)}
+                            min={moment().format('YYYY-MM-DD')}
+                            className="bg-light border-0 fw-bold"
+                        />
+                    </Form.Group>
+                </Modal.Body>
+                <Modal.Footer className="border-0 p-4 pt-0">
+                    <Button variant="light" className="btn-pill px-4" onClick={() => setShowRebookModal(false)}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="success"
+                        className="btn-pill px-4 shadow-sm fw-bold"
+                        onClick={handleRebook}
+                        disabled={submittingRebook}
+                    >
+                        {submittingRebook ? 'REBOOKING...' : 'CONFIRM NEW DATE'}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </Container>
     );
 };
