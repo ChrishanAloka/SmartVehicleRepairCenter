@@ -7,7 +7,7 @@ export default defineConfig({
         react(),
         VitePWA({
             registerType: 'autoUpdate',
-            includeAssets: ['pwa-icon.svg'],
+            includeAssets: ['logo.png'],
             manifest: {
                 name: 'Smart Repair Staff Portal',
                 short_name: 'SmartStaff',
@@ -19,14 +19,14 @@ export default defineConfig({
                 start_url: '/',
                 icons: [
                     {
-                        src: 'pwa-icon.svg',
+                        src: 'logo.png',
                         sizes: '192x192',
-                        type: 'image/svg+xml'
+                        type: 'image/png'
                     },
                     {
-                        src: 'pwa-icon.svg',
+                        src: 'logo.png',
                         sizes: '512x512',
-                        type: 'image/svg+xml'
+                        type: 'image/png'
                     }
                 ]
             }
