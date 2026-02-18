@@ -82,6 +82,7 @@ const CustomerLookup = () => {
                 reviewComment: reviewForm.comment
             });
             setShowReviewModal(false);
+            // Refresh data
             const event = { preventDefault: () => { } };
             handleSearch(event);
         } catch (err) {
@@ -105,6 +106,7 @@ const CustomerLookup = () => {
                 bookingDate: rebookDate
             });
             setShowRebookModal(false);
+            // Refresh data
             const event = { preventDefault: () => { } };
             handleSearch(event);
         } catch (err) {
@@ -112,13 +114,6 @@ const CustomerLookup = () => {
         } finally {
             setSubmittingRebook(false);
         }
-    };
-
-    const formatStopwatch = (startTime) => {
-        const diff = moment.duration(moment().diff(moment(startTime)));
-        const hours = Math.floor(diff.asHours());
-        const minutes = diff.minutes();
-        return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
     };
 
     const getStatusBadge = (status) => {
@@ -172,9 +167,6 @@ const CustomerLookup = () => {
                                         </div>
                                         {isMe && <div className="fw-extrabold text-danger mt-1 animate-fade-in" style={{ fontSize: '0.65rem' }}>YOU</div>}
                                         {!isMe && <div className="text-muted mt-1" style={{ fontSize: '0.65rem' }}>#{i + 1}</div>}
-                                        <div className="text-muted fw-bold" style={{ fontSize: '0.6rem' }}>
-                                            {formatStopwatch(b.status === 'accepted' ? (b.acceptedAt || b.createdAt) : b.createdAt)}
-                                        </div>
                                     </div>
                                 )
                             })
@@ -241,6 +233,7 @@ const CustomerLookup = () => {
 
             {customerData && (
                 <div className="animate-fade-in">
+                    {/* Personalized Queue Status */}
                     {getPendingBookings().length > 0 && (
                         <div className="mb-5">
                             <div className="d-flex align-items-center mb-4">
@@ -271,6 +264,7 @@ const CustomerLookup = () => {
                         </div>
                     )}
 
+                    {/* Customer Information Summary */}
                     <Card className="card-modern mb-5 bg-white border-0">
                         <Card.Body className="p-4">
                             <Row className="align-items-center">
@@ -304,6 +298,7 @@ const CustomerLookup = () => {
                         </Card.Body>
                     </Card>
 
+                    {/* Pending/Active Bookings Table */}
                     {getPendingBookings().length > 0 && (
                         <div className="mb-5">
                             <h5 className="fw-bold text-dark mb-3 text-uppercase small letter-spacing-1">Current Service Status</h5>
@@ -353,6 +348,7 @@ const CustomerLookup = () => {
                         </div>
                     )}
 
+                    {/* Booking History */}
                     <div>
                         <h5 className="fw-bold text-dark mb-3 text-uppercase small letter-spacing-1">Service History</h5>
                         <Card className="card-modern border-0 overflow-hidden">
@@ -447,6 +443,7 @@ const CustomerLookup = () => {
                     </div>
                 </div>
             )}
+            {/* Review Modal */}
             <Modal show={showReviewModal} onHide={() => setShowReviewModal(false)} centered>
                 <Modal.Header closeButton className="border-0">
                     <Modal.Title className="fw-bold">Rate Our Service</Modal.Title>
@@ -489,6 +486,7 @@ const CustomerLookup = () => {
                 </Modal.Footer>
             </Modal>
 
+            {/* Rebook Modal */}
             <Modal show={showRebookModal} onHide={() => setShowRebookModal(false)} centered>
                 <Modal.Header closeButton className="border-0">
                     <Modal.Title className="fw-bold">Reschedule Booking</Modal.Title>

@@ -2,12 +2,31 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Navbar, Nav, Container, Button } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
-import { FaUserCircle, FaSignOutAlt } from 'react-icons/fa';
+import { FaUserCircle, FaSignOutAlt, FaDownload } from 'react-icons/fa';
 
 const NavigationBar = () => {
     const { user, logout, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
+    const [deferredPrompt, setDeferredPrompt] = React.useState(null);
+
+    React.useEffect(() => {
+        const handler = (e) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+        };
+        window.addEventListener('beforeinstallprompt', handler);
+        return () => window.removeEventListener('beforeinstallprompt', handler);
+    }, []);
+
+    const handleInstallClick = async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            setDeferredPrompt(null);
+        }
+    };
 
     const handleLogout = () => {
         logout();
@@ -48,6 +67,17 @@ const NavigationBar = () => {
                     </Nav>
 
                     <Nav>
+                        {deferredPrompt && (
+                            <Button
+                                variant="outline-success"
+                                size="sm"
+                                className="me-3 d-flex align-items-center gap-2"
+                                onClick={handleInstallClick}
+                            >
+                                <FaDownload size={14} />
+                                <span>Install App</span>
+                            </Button>
+                        )}
                         {isAuthenticated ? (
                             <>
                                 <Nav.Item className="d-flex align-items-center me-3 text-light">

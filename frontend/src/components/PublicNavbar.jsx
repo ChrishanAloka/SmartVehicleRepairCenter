@@ -1,19 +1,40 @@
 import React from 'react';
 import { Navbar, Container, Nav, Button } from 'react-bootstrap';
 import { Link, useLocation } from 'react-router-dom';
-import { FaTools, FaCalendarPlus, FaSearch } from 'react-icons/fa';
+import { FaTools, FaCalendarPlus, FaSearch, FaDownload } from 'react-icons/fa';
+import logo from '../assets/logo.png';
 
 const PublicNavbar = () => {
     const location = useLocation();
+    const [deferredPrompt, setDeferredPrompt] = React.useState(null);
+
+    React.useEffect(() => {
+        const handler = (e) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+        };
+        window.addEventListener('beforeinstallprompt', handler);
+        return () => window.removeEventListener('beforeinstallprompt', handler);
+    }, []);
+
+    const handleInstallClick = async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            setDeferredPrompt(null);
+        }
+    };
 
     return (
         <Navbar bg="white" expand="lg" className="shadow-sm py-3 sticky-top">
             <Container>
-                <Navbar.Brand as={Link} to="/" className="fw-bold text-primary d-flex align-items-center">
-                    <div className="bg-primary bg-opacity-10 p-2 rounded-3 me-2">
+                <Navbar.Brand as={Link} to="/" className="fw-bold text-danger d-flex align-items-center">
+                    {/* <div className="bg-primary bg-opacity-10 p-2 rounded-3 me-2">
                         <FaTools className="text-primary" />
-                    </div>
-                    <span className="letter-spacing-1">ROYALAUTO SERVICE</span>
+                    </div> */}
+                    <img src={logo} alt="Logo" style={{ height: '50px', margin: '0 7px 3px 0' }} />
+                    <span className="letter-spacing-1">ROYAL AUTO SERVICE</span>
                 </Navbar.Brand>
 
                 <Navbar.Toggle aria-controls="public-navbar-nav" />
@@ -34,6 +55,18 @@ const PublicNavbar = () => {
                         >
                             CHECK STATUS
                         </Nav.Link>
+
+                        {deferredPrompt && (
+                            <Button
+                                variant="outline-dark"
+                                size="sm"
+                                className="btn-pill px-3 d-flex align-items-center gap-2 animate-fade-in"
+                                onClick={handleInstallClick}
+                            >
+                                <FaDownload size={14} />
+                                <span>Install App</span>
+                            </Button>
+                        )}
 
                         <Button
                             as={Link}

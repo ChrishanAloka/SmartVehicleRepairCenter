@@ -3,7 +3,7 @@ import { Container, Row, Col, Card, Button, Badge, Alert, Spinner } from 'react-
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { technicianAPI, bookingAPI, settingsAPI } from '../utils/api';
-import { FaTools, FaCalendarPlus, FaCheckCircle, FaClock, FaUsers, FaUser, FaSearch } from 'react-icons/fa';
+import { FaTools, FaCalendarPlus, FaCheckCircle, FaClock, FaUsers, FaUser } from 'react-icons/fa';
 import moment from 'moment';
 
 const PublicView = () => {
@@ -153,25 +153,27 @@ const PublicView = () => {
                             </Badge>
                         )}
                     </div>
-                    <div className="d-flex justify-content-center gap-3">
-                        <Button
-                            as={Link}
-                            to="/booking"
-                            variant="primary"
-                            className="btn-pill px-4 py-2 fw-bold shadow-sm"
-                        >
-                            <FaCalendarPlus className="me-2" />
-                            BOOK NOW
-                        </Button>
-                        <Button
-                            as={Link}
-                            to="/customer-lookup"
-                            variant="outline-primary"
-                            className="btn-pill px-4 py-2 fw-bold shadow-sm bg-white"
-                        >
-                            <FaSearch className="me-2" />
-                            CHECK STATUS
-                        </Button>
+                    <div className="d-flex justify-content-center gap-3 flex-wrap">
+                        <Link to="/booking">
+                            <Button size="lg" className="btn-primary-gradient btn-pill shadow-lg border-0 px-5 py-3">
+                                <FaCalendarPlus className="me-2" />
+                                BOOK NOW
+                            </Button>
+                        </Link>
+                        <Link to="/customer-lookup">
+                            <Button variant="light" size="lg" className="btn-pill shadow-sm border px-5 py-3 text-primary fw-bold hover-lift">
+                                <FaUsers className="me-2" />
+                                CHECK MY STATUS
+                            </Button>
+                        </Link>
+                        {isAuthenticated && (
+                            <Link to="/attendance">
+                                <Button variant="light" size="lg" className="btn-pill shadow-sm border px-5 py-3 text-secondary fw-bold hover-lift">
+                                    <FaCheckCircle className="me-2" />
+                                    STAFF ATTENDANCE
+                                </Button>
+                            </Link>
+                        )}
                     </div>
                 </div>
 
@@ -346,8 +348,8 @@ const PublicView = () => {
                                 <div className="rounded-circle bg-info bg-opacity-10 p-3 me-4">
                                     <FaTools className="text-info" size={24} />
                                 </div>
-                                <div className="d-flex flex-column gap-1">
-                                    <h6 className="fw-bold text-dark mb-0 text-uppercase small letter-spacing-1">Service Quality</h6>
+                                <div>
+                                    <h6 className="fw-bold text-dark mb-1 text-uppercase small letter-spacing-1">Service Quality</h6>
                                     <p className="mb-0 text-muted">
                                         Professional repairs with real-time status tracking.
                                     </p>
