@@ -1,8 +1,9 @@
 import React from 'react';
 import { Navbar, Container, Nav, Button } from 'react-bootstrap';
 import { Link, useLocation } from 'react-router-dom';
-import { FaTools, FaCalendarPlus, FaSearch, FaDownload } from 'react-icons/fa';
+import { FaTools, FaCalendarPlus, FaSearch, FaDownload, FaSync } from 'react-icons/fa';
 import logo from '../assets/logo.png';
+import { useRegisterSW } from 'virtual:pwa-register/react';
 
 const PublicNavbar = () => {
     const location = useLocation();
@@ -10,6 +11,19 @@ const PublicNavbar = () => {
     const navbarRef = React.useRef(null);
     const [deferredPrompt, setDeferredPrompt] = React.useState(null);
     const [isInstalling, setIsInstalling] = React.useState(false);
+
+    const {
+        offlineReady: [offlineReady, setOfflineReady],
+        needRefresh: [needRefresh, setNeedRefresh],
+        updateServiceWorker,
+    } = useRegisterSW({
+        onRegistered(r) {
+            console.log('SW Registered: ' + r);
+        },
+        onRegisterError(error) {
+            console.log('SW registration error', error);
+        },
+    });
 
     React.useEffect(() => {
         const handler = (e) => {
@@ -85,6 +99,21 @@ const PublicNavbar = () => {
                         >
                             CHECK STATUS
                         </Nav.Link>
+
+                        {needRefresh && (
+                            <Button
+                                variant="warning"
+                                size="sm"
+                                className="btn-pill px-3 d-flex align-items-center gap-2 animate-fade-in shadow-sm fw-bold"
+                                onClick={() => {
+                                    updateServiceWorker(true);
+                                    setExpanded(false);
+                                }}
+                            >
+                                <FaSync size={14} className="fa-spin" />
+                                <span>Update App</span>
+                            </Button>
+                        )}
 
                         {deferredPrompt && (
                             <Button

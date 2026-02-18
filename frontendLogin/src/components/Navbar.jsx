@@ -2,7 +2,8 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Navbar, Nav, Container, Button } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
-import { FaUserCircle, FaSignOutAlt, FaDownload } from 'react-icons/fa';
+import { FaUserCircle, FaSignOutAlt, FaDownload, FaSync } from 'react-icons/fa';
+import { useRegisterSW } from 'virtual:pwa-register/react';
 
 const NavigationBar = () => {
     const { user, logout, isAuthenticated } = useAuth();
@@ -11,6 +12,19 @@ const NavigationBar = () => {
     const [expanded, setExpanded] = React.useState(false);
     const navbarRef = React.useRef(null);
     const [deferredPrompt, setDeferredPrompt] = React.useState(null);
+
+    const {
+        offlineReady: [offlineReady, setOfflineReady],
+        needRefresh: [needRefresh, setNeedRefresh],
+        updateServiceWorker,
+    } = useRegisterSW({
+        onRegistered(r) {
+            console.log('SW Registered: ' + r);
+        },
+        onRegisterError(error) {
+            console.log('SW registration error', error);
+        },
+    });
 
     React.useEffect(() => {
         const handler = (e) => {
@@ -93,6 +107,20 @@ const NavigationBar = () => {
                     </Nav>
 
                     <Nav>
+                        {needRefresh && (
+                            <Button
+                                variant="warning"
+                                size="sm"
+                                className="me-3 d-flex align-items-center gap-2 fw-bold"
+                                onClick={() => {
+                                    updateServiceWorker(true);
+                                    setExpanded(false);
+                                }}
+                            >
+                                <FaSync size={14} className="fa-spin" />
+                                <span>Update App</span>
+                            </Button>
+                        )}
                         {deferredPrompt && (
                             <Button
                                 variant="outline-success"
