@@ -10,7 +10,7 @@ export default defineConfig({
             includeAssets: ['logo.png'],
             manifest: {
                 name: 'Smart Repair Hub',
-                short_name: 'SmartHub',
+                short_name: 'Smart Royal Hub',
                 description: 'Book your vehicle service and track repair status live.',
                 theme_color: '#0d6efd',
                 background_color: '#f4f6f9',
