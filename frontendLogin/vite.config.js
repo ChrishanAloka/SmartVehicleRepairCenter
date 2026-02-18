@@ -10,7 +10,7 @@ export default defineConfig({
             includeAssets: ['logo.png'],
             manifest: {
                 name: 'Smart Repair Staff Portal',
-                short_name: 'SmartStaff',
+                short_name: 'Smart Royal Staff',
                 description: 'Manage vehicle repairs and technician tasks.',
                 theme_color: '#198754',
                 background_color: '#f4f6f9',
