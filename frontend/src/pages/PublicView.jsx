@@ -166,14 +166,14 @@ const PublicView = () => {
                                 CHECK MY STATUS
                             </Button>
                         </Link>
-                        {isAuthenticated && (
+                        {/* {isAuthenticated && (
                             <Link to="/attendance">
                                 <Button variant="light" size="lg" className="btn-pill shadow-sm border px-5 py-3 text-secondary fw-bold hover-lift">
                                     <FaCheckCircle className="me-2" />
                                     STAFF ATTENDANCE
                                 </Button>
                             </Link>
-                        )}
+                        )} */}
                     </div>
                 </div>
 
