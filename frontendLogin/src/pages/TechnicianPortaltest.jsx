@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Badge, Form, Alert, Modal } from 'react-bootstrap';
 import { bookingAPI, technicianAPI } from '../utils/api';
 import { FaCheckCircle, FaTimesCircle, FaClock, FaSearch } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 import moment from 'moment';
 
 const TechnicianPortal = () => {
@@ -34,7 +35,9 @@ const TechnicianPortal = () => {
             setTechnicians(response.data.filter(t => t.isActive));
         } catch (error) {
             console.error('Error fetching technicians:', error);
-            setError('Failed to load technicians');
+            const eMsg = 'Failed to load technicians';
+            setError(eMsg);
+            toast.error(eMsg);
         }
     };
 
@@ -45,7 +48,9 @@ const TechnicianPortal = () => {
             setBookings(response.data);
         } catch (error) {
             console.error('Error fetching bookings:', error);
-            setError('Failed to load bookings');
+            const eMsg = 'Failed to load bookings';
+            setError(eMsg);
+            toast.error(eMsg);
         } finally {
             setLoading(false);
         }
@@ -84,12 +89,15 @@ const TechnicianPortal = () => {
                 notes: actionData.notes
             });
 
-            setSuccess(`Booking ${actionData.status} successfully!`);
+            const sMsg = `Booking ${actionData.status} successfully!`;
+            setSuccess(sMsg);
+            toast.success(sMsg);
             await fetchTodayBookings();
             handleCloseActionModal();
-            setTimeout(() => setSuccess(''), 3000);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to update booking');
+            const eMsg = err.response?.data?.message || 'Failed to update booking';
+            setError(eMsg);
+            toast.error(eMsg);
         }
     };
 
@@ -130,8 +138,6 @@ const TechnicianPortal = () => {
         <Container fluid className="py-4">
             <h2 className="mb-4">Technician Portal</h2>
 
-            {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
-            {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
 
             {/* Technician Selection */}
             <Card className="shadow-sm border-0 mb-4">

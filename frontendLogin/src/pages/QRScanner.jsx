@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Alert, Form } from 'react-bootstrap';
 import { technicianAPI } from '../utils/api';
 import { FaQrcode, FaCheckCircle } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 
 const QRScanner = () => {
     const [scanning, setScanning] = useState(false);
@@ -40,13 +41,15 @@ const QRScanner = () => {
 
         try {
             const response = await technicianAPI.checkIn(manualId.trim());
-            setSuccess(`Welcome ${response.data.technician.name}! Check-in successful.`);
+            const sMsg = `Welcome ${response.data.technician.name}! Check-in successful.`;
+            setSuccess(sMsg);
+            toast.success(sMsg);
             saveCheckIn(response.data.technician);
             setManualId('');
-            setTimeout(() => setSuccess(''), 5000);
         } catch (err) {
-            setError(err.response?.data?.message || 'Check-in failed. Please verify the employee ID.');
-            setTimeout(() => setError(''), 5000);
+            const eMsg = err.response?.data?.message || 'Check-in failed. Please verify the employee ID.';
+            setError(eMsg);
+            toast.error(eMsg);
         }
     };
 
@@ -57,7 +60,7 @@ const QRScanner = () => {
 
         // Note: Actual QR scanning would require html5-qrcode library
         // For production, implement the QR scanner here
-        alert('QR Scanner will be initialized here. For now, use manual entry below.');
+        toast.info('QR Scanner will be initialized here. For now, use manual entry below.');
         setScanning(false);
     };
 
@@ -73,8 +76,6 @@ const QRScanner = () => {
                             </h2>
                         </Card.Header>
                         <Card.Body className="p-5">
-                            {error && <Alert variant="danger">{error}</Alert>}
-                            {success && <Alert variant="success">{success}</Alert>}
 
                             {/* QR Scanner Area */}
                             <div className="text-center mb-5">

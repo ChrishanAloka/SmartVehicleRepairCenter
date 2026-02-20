@@ -1,8 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import NavigationBar from './components/Navbar';
+import { SettingsProvider } from './context/SettingsContext';
+import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from './components/ProtectedRoute';
+import AppLayout from './components/AppLayout';
 
 // Pages
 import PublicView from './pages/PublicView';
@@ -13,6 +15,7 @@ import Dashboard from './pages/Dashboard';
 import Technicians from './pages/Technicians';
 import Bookings from './pages/Bookings';
 import Invoices from './pages/Invoices';
+import Customers from './pages/Customers';
 import Settings from './pages/Settings';
 import TechnicianPortal from './pages/TechnicianPortal';
 import Attendance from './pages/Attendance';
@@ -25,10 +28,10 @@ import './App.css';
 function App() {
     return (
         <AuthProvider>
-            <Router>
-                <div className="d-flex flex-column min-vh-100">
-                    <NavigationBar />
-                    <main className="flex-grow-1">
+            <SettingsProvider>
+                <Toaster position="top-right" reverseOrder={false} />
+                <Router>
+                    <AppLayout>
                         <Routes>
                             {/* Public Routes */}
                             <Route path="/" element={<Navigate to="/login" replace />} />
@@ -72,6 +75,14 @@ function App() {
                                 }
                             />
                             <Route
+                                path="/customers"
+                                element={
+                                    <ProtectedRoute adminOnly>
+                                        <Customers />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
                                 path="/settings"
                                 element={
                                     <ProtectedRoute adminOnly>
@@ -98,17 +109,9 @@ function App() {
 
                             {/* Add more routes as needed */}
                         </Routes>
-                    </main>
-
-                    <footer className="bg-dark text-white py-3 mt-auto">
-                        <div className="container text-center">
-                            <p className="mb-0">
-                                © {new Date().getFullYear()} ideasmart Solutions. All rights reserved.
-                            </p>
-                        </div>
-                    </footer>
-                </div>
-            </Router>
+                    </AppLayout>
+                </Router>
+            </SettingsProvider>
         </AuthProvider>
     );
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { Toaster } from 'react-hot-toast';
 
 // Pages
 import PublicView from './pages/PublicView';
@@ -17,6 +18,7 @@ import './App.css';
 function App() {
     return (
         <AuthProvider>
+            <Toaster position="top-right" reverseOrder={false} />
             <Router>
                 <div className="d-flex flex-column min-vh-100">
                     <PublicNavbar />

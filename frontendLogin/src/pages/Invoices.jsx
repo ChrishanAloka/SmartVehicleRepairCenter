@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Modal, Form, Alert, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Button, Modal, Form, Alert, Badge, ListGroup } from 'react-bootstrap';
 import { invoiceAPI, bookingAPI } from '../utils/api';
+import { useSettings } from '../context/SettingsContext';
 import { FaPlus, FaEye, FaTrash, FaFileInvoice, FaPrint } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 import moment from 'moment';
 
 const Invoices = () => {
+    const { settings } = useSettings();
     const [invoices, setInvoices] = useState([]);
     const [acceptedBookings, setAcceptedBookings] = useState([]);
     const [showModal, setShowModal] = useState(false);
@@ -26,6 +29,8 @@ const Invoices = () => {
         paymentMethod: 'cash',
         notes: ''
     });
+    const [bookingSearchTerm, setBookingSearchTerm] = useState('');
+    const [showBookingResults, setShowBookingResults] = useState(false);
 
     useEffect(() => {
         fetchInvoices();
@@ -67,6 +72,8 @@ const Invoices = () => {
             paymentMethod: 'cash',
             notes: ''
         });
+        setBookingSearchTerm('');
+        setShowBookingResults(false);
         setError('');
         setSuccess('');
         setShowModal(true);
@@ -76,28 +83,27 @@ const Invoices = () => {
         setShowModal(false);
     };
 
-    const handleBookingSelect = (e) => {
-        const bookingId = e.target.value;
-        if (bookingId) {
-            const booking = acceptedBookings.find(b => b._id === bookingId);
-            if (booking) {
-                setFormData({
-                    ...formData,
-                    bookingId: booking._id,
-                    customerId: booking.customer._id,
-                    customerName: booking.customer.name,
-                    customerPhone: booking.customer.phone
-                });
-            }
-        } else {
-            setFormData({
-                ...formData,
-                bookingId: '',
-                customerId: '',
-                customerName: '',
-                customerPhone: ''
-            });
-        }
+    const selectBooking = (booking) => {
+        setFormData({
+            ...formData,
+            bookingId: booking._id,
+            customerId: booking.customer._id,
+            customerName: booking.customer.name,
+            customerPhone: booking.customer.phone
+        });
+        setBookingSearchTerm(`${booking.customer.name} - ${booking.customer.vehicleNumber}`);
+        setShowBookingResults(false);
+    };
+
+    const clearBookingSelection = () => {
+        setFormData({
+            ...formData,
+            bookingId: '',
+            customerId: '',
+            customerName: '',
+            customerPhone: ''
+        });
+        setBookingSearchTerm('');
     };
 
     const handleAddItem = () => {
@@ -147,7 +153,9 @@ const Invoices = () => {
             };
 
             await invoiceAPI.create(invoiceData);
-            setSuccess('Invoice created successfully!');
+            const sMsg = 'Invoice created successfully!';
+            setSuccess(sMsg);
+            toast.success(sMsg);
             await fetchInvoices();
             await fetchAcceptedBookings();
 
@@ -155,7 +163,9 @@ const Invoices = () => {
                 handleCloseModal();
             }, 1500);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to create invoice');
+            const eMsg = err.response?.data?.message || 'Failed to create invoice';
+            setError(eMsg);
+            toast.error(eMsg);
         } finally {
             setLoading(false);
         }
@@ -240,8 +250,8 @@ const Invoices = () => {
                 <tr>
                   <td>${item.description}</td>
                   <td>${item.quantity}</td>
-                  <td>$${item.unitPrice.toFixed(2)}</td>
-                  <td>$${item.total.toFixed(2)}</td>
+                  <td>${settings.currency} ${item.unitPrice.toFixed(2)}</td>
+                  <td>${settings.currency} ${item.total.toFixed(2)}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -251,23 +261,23 @@ const Invoices = () => {
             <table>
               <tr>
                 <td>Subtotal:</td>
-                <td>$${selectedInvoice.subtotal.toFixed(2)}</td>
+                <td>${settings.currency} ${selectedInvoice.subtotal.toFixed(2)}</td>
               </tr>
               ${selectedInvoice.tax > 0 ? `
               <tr>
                 <td>Tax:</td>
-                <td>$${selectedInvoice.tax.toFixed(2)}</td>
+                <td>${settings.currency} ${selectedInvoice.tax.toFixed(2)}</td>
               </tr>
               ` : ''}
               ${selectedInvoice.discount > 0 ? `
               <tr>
                 <td>Discount:</td>
-                <td>-$${selectedInvoice.discount.toFixed(2)}</td>
+                <td>-${settings.currency} ${selectedInvoice.discount.toFixed(2)}</td>
               </tr>
               ` : ''}
               <tr class="total-row">
                 <td>Total:</td>
-                <td>$${selectedInvoice.total.toFixed(2)}</td>
+                <td>${settings.currency} ${selectedInvoice.total.toFixed(2)}</td>
               </tr>
               <tr>
                 <td>Payment Method:</td>
@@ -297,12 +307,14 @@ const Invoices = () => {
         if (window.confirm('Are you sure you want to delete this invoice?')) {
             try {
                 await invoiceAPI.delete(id);
-                setSuccess('Invoice deleted successfully!');
+                const sMsg = 'Invoice deleted successfully!';
+                setSuccess(sMsg);
+                toast.success(sMsg);
                 await fetchInvoices();
-                setTimeout(() => setSuccess(''), 3000);
             } catch (err) {
-                setError(err.response?.data?.message || 'Delete failed');
-                setTimeout(() => setError(''), 3000);
+                const eMsg = err.response?.data?.message || 'Delete failed';
+                setError(eMsg);
+                toast.error(eMsg);
             }
         }
     };
@@ -327,8 +339,6 @@ const Invoices = () => {
                 </Button>
             </div>
 
-            {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
-            {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
 
             <Card className="shadow-sm border-0">
                 <Card.Body className="p-0">
@@ -368,7 +378,7 @@ const Invoices = () => {
                                             </td>
                                             <td>{getTypeBadge(invoice.type)}</td>
                                             <td>
-                                                <strong>${invoice.total.toFixed(2)}</strong>
+                                                <strong>{settings.currency} {invoice.total.toFixed(2)}</strong>
                                             </td>
                                             <td>
                                                 <Badge bg="secondary">{invoice.paymentMethod.toUpperCase()}</Badge>
@@ -412,8 +422,6 @@ const Invoices = () => {
                 </Modal.Header>
                 <Form onSubmit={handleSubmit}>
                     <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                        {error && <Alert variant="danger">{error}</Alert>}
-                        {success && <Alert variant="success">{success}</Alert>}
 
                         <Form.Group className="mb-3">
                             <Form.Label>Invoice Type *</Form.Label>
@@ -429,21 +437,71 @@ const Invoices = () => {
                         </Form.Group>
 
                         {formData.type !== 'spare_parts' && acceptedBookings.length > 0 && (
-                            <Form.Group className="mb-3">
-                                <Form.Label>Link to Booking (Optional)</Form.Label>
-                                <Form.Select
-                                    value={formData.bookingId}
-                                    onChange={handleBookingSelect}
-                                >
-                                    <option value="">-- Select a booking --</option>
-                                    {acceptedBookings.map(booking => (
-                                        <option key={booking._id} value={booking._id}>
-                                            {booking.customer.name} - {booking.customer.vehicleNumber} ({moment(booking.bookingDate).format('MMM DD')})
-                                        </option>
-                                    ))}
-                                </Form.Select>
+                            <Form.Group className="mb-3 position-relative">
+                                <Form.Label className="fw-bold">Link to Booking (Optional)</Form.Label>
+                                <div className="input-group">
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="🔍 Type name, phone or vehicle number..."
+                                        value={bookingSearchTerm}
+                                        onChange={(e) => {
+                                            setBookingSearchTerm(e.target.value);
+                                            setShowBookingResults(true);
+                                            if (!e.target.value) clearBookingSelection();
+                                        }}
+                                        onFocus={() => setShowBookingResults(true)}
+                                        className="border-primary border-opacity-50"
+                                    />
+                                    {formData.bookingId && (
+                                        <Button
+                                            variant="outline-secondary"
+                                            onClick={clearBookingSelection}
+                                        >
+                                            ✕
+                                        </Button>
+                                    )}
+                                </div>
+
+                                {showBookingResults && bookingSearchTerm && (
+                                    <ListGroup className="position-absolute w-100 shadow-lg mt-1 z-3 overflow-auto" style={{ maxHeight: '250px' }}>
+                                        {acceptedBookings
+                                            .filter(b =>
+                                                b.customer.name.toLowerCase().includes(bookingSearchTerm.toLowerCase()) ||
+                                                b.customer.phone.includes(bookingSearchTerm) ||
+                                                b.customer.vehicleNumber.toLowerCase().includes(bookingSearchTerm.toLowerCase())
+                                            )
+                                            .map(booking => (
+                                                <ListGroup.Item
+                                                    key={booking._id}
+                                                    action
+                                                    onClick={() => selectBooking(booking)}
+                                                    className="d-flex justify-content-between align-items-center py-2"
+                                                >
+                                                    <div>
+                                                        <div className="fw-bold small">{booking.customer.name}</div>
+                                                        <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                                                            {booking.customer.phone} • {booking.customer.vehicleNumber}
+                                                        </div>
+                                                    </div>
+                                                    <Badge bg="light" text="dark" className="border">
+                                                        {moment(booking.bookingDate).format('MMM DD')}
+                                                    </Badge>
+                                                </ListGroup.Item>
+                                            ))
+                                        }
+                                        {acceptedBookings.filter(b =>
+                                            b.customer.name.toLowerCase().includes(bookingSearchTerm.toLowerCase()) ||
+                                            b.customer.phone.includes(bookingSearchTerm) ||
+                                            b.customer.vehicleNumber.toLowerCase().includes(bookingSearchTerm.toLowerCase())
+                                        ).length === 0 && (
+                                                <ListGroup.Item className="text-center py-3 text-muted small">
+                                                    No matching bookings found
+                                                </ListGroup.Item>
+                                            )}
+                                    </ListGroup>
+                                )}
                                 <Form.Text className="text-muted">
-                                    This will automatically mark the booking as completed
+                                    Linking a booking will automatically mark it as completed upon payment
                                 </Form.Text>
                             </Form.Group>
                         )}
@@ -530,7 +588,7 @@ const Invoices = () => {
                                                 <Form.Label>Total</Form.Label>
                                                 <Form.Control
                                                     type="text"
-                                                    value={`$${item.total.toFixed(2)}`}
+                                                    value={`${settings.currency} ${item.total.toFixed(2)}`}
                                                     disabled
                                                 />
                                             </Form.Group>
@@ -603,20 +661,20 @@ const Invoices = () => {
                                     <div className="bg-light p-3 rounded">
                                         <div className="d-flex justify-content-between mb-1">
                                             <span>Subtotal:</span>
-                                            <strong>${calculateSubtotal().toFixed(2)}</strong>
+                                            <strong>{settings.currency} {calculateSubtotal().toFixed(2)}</strong>
                                         </div>
                                         <div className="d-flex justify-content-between mb-1">
                                             <span>Tax:</span>
-                                            <strong>${(formData.tax || 0).toFixed(2)}</strong>
+                                            <strong>{settings.currency} {(formData.tax || 0).toFixed(2)}</strong>
                                         </div>
                                         <div className="d-flex justify-content-between mb-2">
                                             <span>Discount:</span>
-                                            <strong>-${(formData.discount || 0).toFixed(2)}</strong>
+                                            <strong>-{settings.currency} {(formData.discount || 0).toFixed(2)}</strong>
                                         </div>
                                         <hr className="my-2" />
                                         <div className="d-flex justify-content-between">
                                             <span className="h6 mb-0">Total:</span>
-                                            <strong className="h5 mb-0 text-primary">${calculateTotal().toFixed(2)}</strong>
+                                            <strong className="h5 mb-0 text-primary">{settings.currency} {calculateTotal().toFixed(2)}</strong>
                                         </div>
                                     </div>
                                 </div>
@@ -688,8 +746,8 @@ const Invoices = () => {
                                         <tr key={index}>
                                             <td>{item.description}</td>
                                             <td>{item.quantity}</td>
-                                            <td>${item.unitPrice.toFixed(2)}</td>
-                                            <td>${item.total.toFixed(2)}</td>
+                                            <td>{settings.currency} {item.unitPrice.toFixed(2)}</td>
+                                            <td>{settings.currency} {item.total.toFixed(2)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -701,23 +759,23 @@ const Invoices = () => {
                                         <tbody>
                                             <tr>
                                                 <td>Subtotal:</td>
-                                                <td className="text-end">${selectedInvoice.subtotal.toFixed(2)}</td>
+                                                <td className="text-end">{settings.currency} {selectedInvoice.subtotal.toFixed(2)}</td>
                                             </tr>
                                             {selectedInvoice.tax > 0 && (
                                                 <tr>
                                                     <td>Tax:</td>
-                                                    <td className="text-end">${selectedInvoice.tax.toFixed(2)}</td>
+                                                    <td className="text-end">{settings.currency} {selectedInvoice.tax.toFixed(2)}</td>
                                                 </tr>
                                             )}
                                             {selectedInvoice.discount > 0 && (
                                                 <tr>
                                                     <td>Discount:</td>
-                                                    <td className="text-end">-${selectedInvoice.discount.toFixed(2)}</td>
+                                                    <td className="text-end">-{settings.currency}{selectedInvoice.discount.toFixed(2)}</td>
                                                 </tr>
                                             )}
                                             <tr className="fw-bold">
                                                 <td>Total:</td>
-                                                <td className="text-end h5 mb-0">${selectedInvoice.total.toFixed(2)}</td>
+                                                <td className="text-end h5 mb-0">{settings.currency} {selectedInvoice.total.toFixed(2)}</td>
                                             </tr>
                                         </tbody>
                                     </Table>

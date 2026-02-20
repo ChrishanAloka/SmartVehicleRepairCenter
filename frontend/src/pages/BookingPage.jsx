@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, Form, Button, Alert, Badge } from 'react-boo
 import { useNavigate } from 'react-router-dom';
 import { bookingAPI, settingsAPI } from '../utils/api';
 import { FaClock } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 import moment from 'moment';
 
 const BookingPage = () => {
@@ -13,6 +14,7 @@ const BookingPage = () => {
         idNumber: '',
         vehicleNumber: '',
         vehicleModel: '',
+        problemDescription: '',
         bookingDate: moment().format('YYYY-MM-DD'),
     });
     const [settings, setSettings] = useState(null);
@@ -21,6 +23,7 @@ const BookingPage = () => {
     const [success, setSuccess] = useState('');
     const [shopCurrentlyClosed, setShopCurrentlyClosed] = useState(false);
     const [viewMode, setViewMode] = useState('status');
+    const [fetchingCustomer, setFetchingCustomer] = useState(false);
 
     useEffect(() => {
         const checkInitialStatus = async () => {
@@ -61,6 +64,30 @@ const BookingPage = () => {
         return now.isBetween(openTime, closeTime, null, '[]');
     };
 
+    const handleIDBlur = async () => {
+        if (!formData.idNumber) return;
+
+        setFetchingCustomer(true);
+        try {
+            const response = await bookingAPI.getByCustomer(formData.idNumber);
+            if (response.data && response.data.customer) {
+                const { name, phone, vehicleNumber, vehicleModel } = response.data.customer;
+                setFormData(prev => ({
+                    ...prev,
+                    name: name || prev.name,
+                    phone: phone || prev.phone,
+                    vehicleNumber: vehicleNumber || prev.vehicleNumber,
+                    vehicleModel: vehicleModel || prev.vehicleModel
+                }));
+            }
+        } catch (err) {
+            // Silently fail if customer not found - they might be new
+            console.log('Customer not found or error fetching:', err);
+        } finally {
+            setFetchingCustomer(false);
+        }
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
 
@@ -74,7 +101,9 @@ const BookingPage = () => {
             );
 
             if (holiday) {
-                setError(`The shop is closed on ${moment(selectedDate).format('MMMM Do')} for ${holiday.reason || 'a holiday'}. Please choose another date.`);
+                const msg = `The shop is closed on ${moment(selectedDate).format('MMMM Do')} for ${holiday.reason || 'a holiday'}. Please choose another date.`;
+                setError(msg);
+                toast.error(msg);
                 // Reset to tomorrow if today or previous date was picked
                 setFormData({ ...formData, [name]: moment().add(1, 'days').format('YYYY-MM-DD') });
                 return;
@@ -94,7 +123,9 @@ const BookingPage = () => {
             // 1. Holiday validation
             const isOpenResponse = await settingsAPI.isOpen(formData.bookingDate);
             if (!isOpenResponse.data.isOpen) {
-                setError('The shop is closed on the selected date (Holiday/Day-off). Please choose another date.');
+                const msg = 'The shop is closed on the selected date (Holiday/Day-off). Please choose another date.';
+                setError(msg);
+                toast.error(msg);
                 setLoading(false);
                 return;
             }
@@ -102,13 +133,17 @@ const BookingPage = () => {
             // 2. Working hours validation for same-day bookings
             const isToday = moment(formData.bookingDate).isSame(moment(), 'day');
             if (isToday && !isWithinWorkingHours()) {
-                setError(`Same-day bookings are only accepted during working hours (${settings.openingTime} - ${settings.closingTime}). Please book for tomorrow or visit us when we open.`);
+                const msg = `Same-day bookings are only accepted during working hours (${settings.openingTime} - ${settings.closingTime}). Please book for tomorrow or visit us when we open.`;
+                setError(msg);
+                toast.error(msg);
                 setLoading(false);
                 return;
             }
 
             await bookingAPI.create(formData);
-            setSuccess('Booking created successfully! We will see you soon.');
+            const successMsg = 'Booking created successfully! We will see you soon.';
+            setSuccess(successMsg);
+            toast.success(successMsg);
 
             setFormData({
                 name: '',
@@ -116,12 +151,15 @@ const BookingPage = () => {
                 idNumber: '',
                 vehicleNumber: '',
                 vehicleModel: '',
+                problemDescription: '',
                 bookingDate: moment().format('YYYY-MM-DD'),
             });
 
             setTimeout(() => navigate('/'), 3000);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to create booking');
+            const errorMsg = err.response?.data?.message || 'Failed to create booking';
+            setError(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -221,10 +259,38 @@ const BookingPage = () => {
                             <h3 className="mb-0">Book a Service Appointment</h3>
                         </Card.Header>
                         <Card.Body className="p-4">
-                            {error && <Alert variant="danger">{error}</Alert>}
-                            {success && <Alert variant="success">{success}</Alert>}
 
                             <Form onSubmit={handleSubmit}>
+                                <Row>
+                                    <Col md={12}>
+                                        <Form.Group className="mb-4">
+                                            <Form.Label className="fw-bold">ID Number *</Form.Label>
+                                            <div className="position-relative">
+                                                <Form.Control
+                                                    type="text"
+                                                    name="idNumber"
+                                                    value={formData.idNumber}
+                                                    onChange={handleChange}
+                                                    onBlur={handleIDBlur}
+                                                    required
+                                                    placeholder="Enter your ID number to auto-fill details"
+                                                    className={fetchingCustomer ? 'pe-5' : ''}
+                                                />
+                                                {fetchingCustomer && (
+                                                    <div className="position-absolute end-0 top-50 translate-middle-y me-3">
+                                                        <div className="spinner-border spinner-border-sm text-primary" role="status">
+                                                            <span className="visually-hidden">Loading...</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <Form.Text className="text-muted">
+                                                Enter your ID (NIC) to automatically retrieve your previous details.
+                                            </Form.Text>
+                                        </Form.Group>
+                                    </Col>
+                                </Row>
+
                                 <Row>
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
@@ -258,23 +324,6 @@ const BookingPage = () => {
                                 <Row>
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
-                                            <Form.Label>ID Number *</Form.Label>
-                                            <Form.Control
-                                                type="text"
-                                                name="idNumber"
-                                                value={formData.idNumber}
-                                                onChange={handleChange}
-                                                required
-                                                placeholder="Enter your ID number"
-                                            />
-                                            <Form.Text className="text-muted">
-                                                Used for history tracking
-                                            </Form.Text>
-                                        </Form.Group>
-                                    </Col>
-
-                                    <Col md={6}>
-                                        <Form.Group className="mb-3">
                                             <Form.Label>Vehicle Number *</Form.Label>
                                             <Form.Control
                                                 type="text"
@@ -287,9 +336,7 @@ const BookingPage = () => {
                                             />
                                         </Form.Group>
                                     </Col>
-                                </Row>
 
-                                <Row>
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
                                             <Form.Label>Vehicle Category *</Form.Label>
@@ -308,8 +355,10 @@ const BookingPage = () => {
                                             </Form.Select>
                                         </Form.Group>
                                     </Col>
+                                </Row>
 
-                                    <Col md={6}>
+                                <Row>
+                                    <Col md={12}>
                                         <Form.Group className="mb-3">
                                             <Form.Label>Preferred Date *</Form.Label>
                                             <Form.Control
@@ -327,6 +376,23 @@ const BookingPage = () => {
                                         </Form.Group>
                                     </Col>
                                 </Row>
+
+                                <Row>
+                                    <Col md={12}>
+                                        <Form.Group className="mb-4">
+                                            <Form.Label>Problem Description (Optional)</Form.Label>
+                                            <Form.Control
+                                                as="textarea"
+                                                rows={3}
+                                                name="problemDescription"
+                                                value={formData.problemDescription}
+                                                onChange={handleChange}
+                                                placeholder="Briefly describe the issue with your vehicle"
+                                            />
+                                        </Form.Group>
+                                    </Col>
+                                </Row>
+
 
                                 {settings?.holidays?.length > 0 && (
                                     <div className="mb-4 small text-muted">

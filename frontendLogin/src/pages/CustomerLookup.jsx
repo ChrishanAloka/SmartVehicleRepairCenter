@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Table, Badge, Modal } from 'react-bootstrap';
 import { bookingAPI } from '../utils/api';
-import { FaSearch, FaUser, FaCar, FaClock, FaTools, FaStar, FaRegStar } from 'react-icons/fa';
+import { FaSearch, FaUser, FaCar, FaClock, FaTools, FaStar, FaRegStar, FaEdit } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 import moment from 'moment';
 
 const StarRating = ({ rating, setRating, interactive = false }) => {
@@ -37,29 +38,121 @@ const CustomerLookup = () => {
     const [showRebookModal, setShowRebookModal] = useState(false);
     const [rebookDate, setRebookDate] = useState(moment().format('YYYY-MM-DD'));
     const [submittingRebook, setSubmittingRebook] = useState(false);
+    const [showEditCustomerModal, setShowEditCustomerModal] = useState(false);
+    const [editCustomerForm, setEditCustomerForm] = useState({
+        name: '',
+        phone: '',
+        idNumber: '',
+        vehicleNumber: '',
+        vehicleModel: ''
+    });
+    const [updatingCustomer, setUpdatingCustomer] = useState(false);
+    const [showEditBookingModal, setShowEditBookingModal] = useState(false);
+    const [editBookingForm, setEditBookingForm] = useState({
+        problemDescription: '',
+        bookingDate: ''
+    });
+    const [updatingBooking, setUpdatingBooking] = useState(false);
 
-    const handleSearch = async (e) => {
-        e.preventDefault();
-        setError('');
-        setCustomerData(null);
-        setLoading(true);
+    const fetchLatestData = useCallback(async (isAutoRefresh = false) => {
+        if (!identifier) return;
+
+        if (!isAutoRefresh) {
+            setLoading(true);
+            setError('');
+        }
 
         try {
             const [customerRes, todayRes] = await Promise.all([
                 bookingAPI.getByCustomer(identifier),
-                bookingAPI.getToday()
+                bookingAPI.getToday({ date: moment().format('YYYY-MM-DD') })
             ]);
 
             setCustomerData(customerRes.data);
             setAllTodayBookings(todayRes.data);
 
-            if (customerRes.data.bookings.length === 0) {
+            if (!isAutoRefresh && customerRes.data.bookings.length === 0) {
                 setError('No booking history found for this vehicle/ID.');
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Information not found. Please check your vehicle number or ID.');
+            if (!isAutoRefresh) {
+                const msg = err.response?.data?.message || 'Information not found. Please check your vehicle number or ID.';
+                setError(msg);
+                toast.error(msg);
+                setCustomerData(null);
+            }
         } finally {
-            setLoading(false);
+            if (!isAutoRefresh) {
+                setLoading(false);
+            }
+        }
+    }, [identifier]);
+
+    const handleSearch = (e) => {
+        if (e) e.preventDefault();
+        fetchLatestData(false);
+    };
+
+    useEffect(() => {
+        let interval;
+        if (customerData) {
+            interval = setInterval(() => {
+                fetchLatestData(true);
+            }, 15000); // 15 seconds refresh
+        }
+        return () => clearInterval(interval);
+    }, [customerData, fetchLatestData]);
+
+    const handleOpenEditCustomer = () => {
+        setEditCustomerForm({
+            name: customerData.customer.name,
+            phone: customerData.customer.phone,
+            idNumber: customerData.customer.idNumber,
+            vehicleNumber: customerData.customer.vehicleNumber,
+            vehicleModel: customerData.customer.vehicleModel || ''
+        });
+        setShowEditCustomerModal(true);
+    };
+
+    const handleUpdateCustomer = async () => {
+        setUpdatingCustomer(true);
+        try {
+            await bookingAPI.updateCustomer(customerData.customer._id, editCustomerForm);
+            setShowEditCustomerModal(false);
+            // Refresh data
+            const event = { preventDefault: () => { } };
+            handleSearch(event);
+            toast.success('Customer details updated successfully');
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to update customer details');
+        } finally {
+            setUpdatingCustomer(false);
+        }
+    };
+
+    const handleOpenEditBooking = (booking) => {
+        setSelectedBooking(booking);
+        setEditBookingForm({
+            problemDescription: booking.problemDescription,
+            bookingDate: moment(booking.bookingDate).format('YYYY-MM-DD')
+        });
+        setShowEditBookingModal(true);
+    };
+
+    const handleUpdateBooking = async () => {
+        if (!selectedBooking) return;
+        setUpdatingBooking(true);
+        try {
+            await bookingAPI.update(selectedBooking._id, editBookingForm);
+            setShowEditBookingModal(false);
+            // Refresh data
+            const event = { preventDefault: () => { } };
+            handleSearch(event);
+            toast.success('Booking details updated successfully');
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to update booking details');
+        } finally {
+            setUpdatingBooking(false);
         }
     };
 
@@ -72,7 +165,7 @@ const CustomerLookup = () => {
     const handleSubmitReview = async () => {
         if (!selectedBooking) return;
         if (reviewForm.rating === 0) {
-            alert('Please select a rating before submitting.');
+            toast.error('Please select a rating before submitting.');
             return;
         }
         setSubmittingReview(true);
@@ -81,12 +174,12 @@ const CustomerLookup = () => {
                 rating: reviewForm.rating,
                 reviewComment: reviewForm.comment
             });
-            setShowReviewModal(false);
+            toast.success('Review submitted successfully');
             // Refresh data
             const event = { preventDefault: () => { } };
             handleSearch(event);
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to submit review');
+            toast.error(err.response?.data?.message || 'Failed to submit review');
         } finally {
             setSubmittingReview(false);
         }
@@ -105,12 +198,12 @@ const CustomerLookup = () => {
             await bookingAPI.rebook(selectedBooking._id, {
                 bookingDate: rebookDate
             });
-            setShowRebookModal(false);
+            toast.success('Service rescheduled successfully');
             // Refresh data
             const event = { preventDefault: () => { } };
             handleSearch(event);
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to rebook');
+            toast.error(err.response?.data?.message || 'Failed to rebook');
         } finally {
             setSubmittingRebook(false);
         }
@@ -130,11 +223,39 @@ const CustomerLookup = () => {
         return <Badge bg={config.bg} className="px-3 py-2 rounded-pill shadow-sm">{config.text}</Badge>;
     };
 
-    const getPendingBookings = () => {
+    const getTodayActiveBookings = () => {
+        if (!customerData || !customerData.bookings) return [];
+        const today = moment().format('YYYY-MM-DD');
+        return customerData.bookings.filter(b =>
+            // Show if it's pending for today OR if it's currently in progress regardless of date
+            ((moment(b.bookingDate).format('YYYY-MM-DD') === today && b.status === 'pending') ||
+                (b.status === 'accepted')) &&
+            !b.isPaidOut
+        );
+    };
+
+    const getOverallActiveBookings = () => {
         if (!customerData || !customerData.bookings) return [];
         return customerData.bookings.filter(b =>
-            (b.status === 'pending' || b.status === 'accepted' || b.status === 'repaired') && !b.isPaidOut
+            (b.status === 'pending' || b.status === 'accepted' || b.status === 'repaired') &&
+            !b.isPaidOut
         );
+    };
+
+    const getQueuePosition = (bookingId, list) => {
+        const index = list.findIndex(b => b._id === bookingId);
+        if (index === -1) return null;
+        const pos = index + 1;
+        const suffix = (pos) => {
+            if (pos > 3 && pos < 21) return 'th';
+            switch (pos % 10) {
+                case 1: return 'st';
+                case 2: return 'nd';
+                case 3: return 'rd';
+                default: return 'th';
+            }
+        };
+        return `${pos}${suffix(pos)}`;
     };
 
     const QueueVisualizer = ({ title, bookingsList, userBookingIds, icon, color, status }) => {
@@ -182,8 +303,8 @@ const CustomerLookup = () => {
             <Row className="justify-content-center mb-5 animate-fade-in">
                 <Col lg={7}>
                     <div className="text-center mb-5">
-                        <h1 className="display-5 fw-bold text-primary mb-2">Check My Status</h1>
-                        <p className="text-muted lead">Track your vehicle's progress in real-time</p>
+                        <h1 className="display-5 fw-bold text-primary mb-2">Customer Service Lookup</h1>
+                        <p className="text-muted lead">Track any vehicle's progress and history</p>
                     </div>
                     <Card className="card-modern border-0">
                         <Card.Body className="p-4 p-md-5">
@@ -210,22 +331,16 @@ const CustomerLookup = () => {
                                     {loading ? (
                                         <>
                                             <span className="spinner-border spinner-border-sm me-2" />
-                                            TRACKING...
+                                            SEARCHING...
                                         </>
                                     ) : (
                                         <>
                                             <FaSearch className="me-2" />
-                                            FIND MY VEHICLE
+                                            FIND RECORDS
                                         </>
                                     )}
                                 </Button>
                             </Form>
-
-                            {error && (
-                                <Alert variant="danger" className="mt-4 border-0 shadow-sm rounded-3">
-                                    {error}
-                                </Alert>
-                            )}
                         </Card.Body>
                     </Card>
                 </Col>
@@ -234,17 +349,30 @@ const CustomerLookup = () => {
             {customerData && (
                 <div className="animate-fade-in">
                     {/* Personalized Queue Status */}
-                    {getPendingBookings().length > 0 && (
+                    {getTodayActiveBookings().length > 0 && (
                         <div className="mb-5">
-                            <div className="d-flex align-items-center mb-4">
-                                <h3 className="fw-bold text-dark mb-0 border-start border-4 border-primary ps-3">Your Live Queue Position</h3>
+                            <div className="d-flex align-items-center justify-content-between mb-4">
+                                <h3 className="fw-bold text-dark mb-0 border-start border-4 border-primary ps-3">Your Live Workshop Positioning</h3>
+                                <div className="d-flex gap-2">
+                                    {getTodayActiveBookings().map(myBooking => {
+                                        const pendingList = getOverallActiveBookings().filter(b => b.status === 'pending');
+                                        const repairingList = getOverallActiveBookings().filter(b => b.status === 'accepted' && !b.isPaidOut);
+
+                                        const waitingPos = getQueuePosition(myBooking._id, pendingList);
+                                        const floorPos = getQueuePosition(myBooking._id, repairingList);
+
+                                        if (waitingPos) return <Badge key={myBooking._id} bg="warning" className="px-3 py-2 rounded-pill text-dark shadow-sm">Waiting: {waitingPos}</Badge>;
+                                        if (floorPos) return <Badge key={myBooking._id} bg="success" className="px-3 py-2 rounded-pill shadow-sm">Repairing: {floorPos}</Badge>;
+                                        return null;
+                                    })}
+                                </div>
                             </div>
                             <Row className="g-4">
                                 <Col lg={6}>
                                     <QueueVisualizer
                                         title="Waiting List"
                                         bookingsList={allTodayBookings.filter(b => b.status === 'pending')}
-                                        userBookingIds={getPendingBookings().map(b => b._id)}
+                                        userBookingIds={getTodayActiveBookings().map(b => b._id)}
                                         icon={<FaClock className="text-warning text-opacity-75" size={24} />}
                                         color="warning"
                                         status="Next in line"
@@ -254,7 +382,7 @@ const CustomerLookup = () => {
                                     <QueueVisualizer
                                         title="Being Repaired"
                                         bookingsList={allTodayBookings.filter(b => b.status === 'accepted' && !b.isPaidOut)}
-                                        userBookingIds={getPendingBookings().map(b => b._id)}
+                                        userBookingIds={getTodayActiveBookings().map(b => b._id)}
                                         icon={<FaTools className="text-success text-opacity-75" size={24} />}
                                         color="success"
                                         status="On the floor"
@@ -275,14 +403,23 @@ const CustomerLookup = () => {
                                         </div>
                                         <div>
                                             <h4 className="fw-bold text-dark mb-1">{customerData.customer.name}</h4>
-                                            <div className="d-flex gap-3 text-muted small">
+                                            <div className="d-flex flex-wrap gap-3 text-muted small">
                                                 <span><FaCar className="me-1" /> {customerData.customer.vehicleNumber}</span>
                                                 {customerData.customer.vehicleModel && <span>• {customerData.customer.vehicleModel}</span>}
+                                                <span>• <strong>ID:</strong> {customerData.customer.idNumber}</span>
+                                                <span>• <strong>Phone:</strong> {customerData.customer.phone}</span>
                                             </div>
                                         </div>
                                     </div>
                                 </Col>
-                                <Col md={4} className="text-md-end">
+                                <Col md={4} className="text-md-end d-flex gap-2 justify-content-md-end">
+                                    <Button
+                                        variant="outline-primary"
+                                        className="btn-pill px-4 hover-lift"
+                                        onClick={handleOpenEditCustomer}
+                                    >
+                                        Edit Details
+                                    </Button>
                                     <Button
                                         variant="light"
                                         className="btn-pill px-4 border text-muted hover-lift"
@@ -291,7 +428,7 @@ const CustomerLookup = () => {
                                             setIdentifier('');
                                         }}
                                     >
-                                        Track Different ID
+                                        New Search
                                     </Button>
                                 </Col>
                             </Row>
@@ -299,7 +436,7 @@ const CustomerLookup = () => {
                     </Card>
 
                     {/* Pending/Active Bookings Table */}
-                    {getPendingBookings().length > 0 && (
+                    {getOverallActiveBookings().length > 0 && (
                         <div className="mb-5">
                             <h5 className="fw-bold text-dark mb-3 text-uppercase small letter-spacing-1">Current Service Status</h5>
                             <Card className="card-modern border-0 overflow-hidden">
@@ -309,16 +446,23 @@ const CustomerLookup = () => {
                                             <thead className="bg-light">
                                                 <tr>
                                                     <th className="ps-4 py-3 text-muted small text-uppercase fw-bold letter-spacing-1">Booking ID</th>
+                                                    <th className="py-3 text-muted small text-uppercase fw-bold letter-spacing-1">Date</th>
                                                     <th className="py-3 text-muted small text-uppercase fw-bold letter-spacing-1">Issue Reported</th>
                                                     <th className="py-3 text-muted small text-uppercase fw-bold letter-spacing-1">Technician</th>
+                                                    <th className="py-3 text-muted small text-uppercase fw-bold letter-spacing-1">Technician Notes</th>
                                                     <th className="pe-4 py-3 text-end text-muted small text-uppercase fw-bold letter-spacing-1">Status</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {getPendingBookings().map((booking) => (
+                                                {getOverallActiveBookings().map((booking) => (
                                                     <tr key={booking._id} className="transition-base">
                                                         <td className="ps-4 py-3 fw-bold text-primary">
                                                             #{booking._id.slice(-6).toUpperCase()}
+                                                        </td>
+                                                        <td className="py-3 text-dark">
+                                                            {moment(booking.bookingDate).isSame(moment(), 'day') ? (
+                                                                <Badge bg="primary" className="me-2">TODAY</Badge>
+                                                            ) : moment(booking.bookingDate).format('MMM DD, YYYY')}
                                                         </td>
                                                         <td className="py-3 text-dark">
                                                             {booking.problemDescription}
@@ -335,8 +479,27 @@ const CustomerLookup = () => {
                                                                 <span className="text-muted italic small">Awaiting Assign</span>
                                                             )}
                                                         </td>
+                                                        <td className="py-3">
+                                                            {booking.notes ? (
+                                                                <span className="text-dark small">{booking.notes}</span>
+                                                            ) : (
+                                                                <span className="text-muted italic small">-</span>
+                                                            )}
+                                                        </td>
                                                         <td className="pe-4 py-3 text-end">
-                                                            {getStatusBadge(booking.status)}
+                                                            <div className="d-flex gap-2 justify-content-end align-items-center">
+                                                                {booking.status === 'pending' && (
+                                                                    <Button
+                                                                        variant="link"
+                                                                        size="sm"
+                                                                        className="p-0 text-decoration-none small fw-bold me-2"
+                                                                        onClick={() => handleOpenEditBooking(booking)}
+                                                                    >
+                                                                        EDIT
+                                                                    </Button>
+                                                                )}
+                                                                {getStatusBadge(booking.status)}
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -515,6 +678,140 @@ const CustomerLookup = () => {
                         disabled={submittingRebook}
                     >
                         {submittingRebook ? 'REBOOKING...' : 'CONFIRM NEW DATE'}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Edit Customer Modal */}
+            <Modal show={showEditCustomerModal} onHide={() => setShowEditCustomerModal(false)} centered>
+                <Modal.Header closeButton className="border-0">
+                    <Modal.Title className="fw-bold">Edit Customer Details</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="p-4">
+                    <Form>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="fw-bold small text-muted text-uppercase">Full Name</Form.Label>
+                            <Form.Control
+                                type="text"
+                                value={editCustomerForm.name}
+                                onChange={(e) => setEditCustomerForm({ ...editCustomerForm, name: e.target.value })}
+                                className="bg-light border-0"
+                            />
+                        </Form.Group>
+                        <Row>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label className="fw-bold small text-muted text-uppercase">Phone Number</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        value={editCustomerForm.phone}
+                                        onChange={(e) => setEditCustomerForm({ ...editCustomerForm, phone: e.target.value })}
+                                        className="bg-light border-0"
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label className="fw-bold small text-muted text-uppercase">ID Number</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        value={editCustomerForm.idNumber}
+                                        onChange={(e) => setEditCustomerForm({ ...editCustomerForm, idNumber: e.target.value })}
+                                        className="bg-light border-0"
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        <Row>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label className="fw-bold small text-muted text-uppercase">Vehicle Number</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        value={editCustomerForm.vehicleNumber}
+                                        onChange={(e) => setEditCustomerForm({ ...editCustomerForm, vehicleNumber: e.target.value.toUpperCase() })}
+                                        className="bg-light border-0"
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label className="fw-bold small text-muted text-uppercase">Vehicle Category</Form.Label>
+                                    <Form.Select
+                                        value={editCustomerForm.vehicleModel}
+                                        onChange={(e) => setEditCustomerForm({ ...editCustomerForm, vehicleModel: e.target.value })}
+                                        className="bg-light border-0"
+                                    >
+                                        <option value="">Select Category</option>
+                                        <option value="Bike">Bike</option>
+                                        <option value="Scooter">Scooter</option>
+                                        <option value="Sports Bike">Sports Bike</option>
+                                        <option value="Off-Road Bike">Off-Road Bike</option>
+                                        <option value="Mini-Moto Bike">Mini-Moto Bike</option>
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                    </Form>
+                </Modal.Body>
+                <Modal.Footer className="border-0 p-4 pt-0">
+                    <Button variant="light" className="btn-pill px-4" onClick={() => setShowEditCustomerModal(false)}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="primary"
+                        className="btn-primary-gradient btn-pill px-4 shadow-sm"
+                        onClick={handleUpdateCustomer}
+                        disabled={updatingCustomer}
+                    >
+                        {updatingCustomer ? 'UPDATING...' : 'SAVE CHANGES'}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+            {/* Edit Booking Modal */}
+            <Modal show={showEditBookingModal} onHide={() => setShowEditBookingModal(false)} centered>
+                <Modal.Header closeButton className="border-0">
+                    <Modal.Title className="fw-bold">Edit Booking Details</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="p-4">
+                    <Form>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="fw-bold small text-muted text-uppercase">Booking Date</Form.Label>
+                            <Form.Control
+                                type="date"
+                                value={editBookingForm.bookingDate}
+                                onChange={(e) => setEditBookingForm({ ...editBookingForm, bookingDate: e.target.value })}
+                                className="bg-light border-0 fw-bold"
+                                min={moment().format('YYYY-MM-DD')}
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="fw-bold small text-muted text-uppercase">Reported Issue / Description</Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                rows={4}
+                                value={editBookingForm.problemDescription}
+                                onChange={(e) => setEditBookingForm({ ...editBookingForm, problemDescription: e.target.value })}
+                                className="bg-light border-0"
+                                placeholder="Describe the issue in detail"
+                            />
+                        </Form.Group>
+                        <div className="alert alert-info py-2 small border-0">
+                            <FaClock className="me-2" /> You can only edit details while the booking is in the Waiting List.
+                        </div>
+                    </Form>
+                </Modal.Body>
+                <Modal.Footer className="border-0 p-4 pt-0">
+                    <Button variant="light" className="btn-pill px-4" onClick={() => setShowEditBookingModal(false)}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="primary"
+                        className="btn-primary-gradient btn-pill px-4 shadow-sm fw-bold"
+                        onClick={handleUpdateBooking}
+                        disabled={updatingBooking}
+                    >
+                        {updatingBooking ? 'SAVING...' : 'SAVE CHANGES'}
                     </Button>
                 </Modal.Footer>
             </Modal>

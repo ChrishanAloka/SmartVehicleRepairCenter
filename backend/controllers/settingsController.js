@@ -12,6 +12,7 @@ const getSettings = async (req, res) => {
             settings = await ShopSettings.create({
                 openingTime: '08:00',
                 closingTime: '18:00',
+                currency: 'LKR',
                 holidays: []
             });
         }
@@ -33,7 +34,8 @@ const updateSettings = async (req, res) => {
             shopName,
             shopAddress,
             shopPhone,
-            shopEmail
+            shopEmail,
+            currency
         } = req.body;
 
         let settings = await ShopSettings.findOne();
@@ -47,6 +49,7 @@ const updateSettings = async (req, res) => {
             if (shopAddress) settings.shopAddress = shopAddress;
             if (shopPhone) settings.shopPhone = shopPhone;
             if (shopEmail) settings.shopEmail = shopEmail;
+            if (currency) settings.currency = currency;
 
             await settings.save();
         }

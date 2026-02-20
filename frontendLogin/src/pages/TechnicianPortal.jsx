@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Badge, Form, Alert, Modal } from 'react-bootstrap';
 import { bookingAPI, technicianAPI } from '../utils/api';
-import { FaCheckCircle, FaTimesCircle, FaClock, FaSearch, FaUser, FaTools } from 'react-icons/fa';
+import { FaCheckCircle, FaTimesCircle, FaClock, FaSearch, FaUser, FaTools, FaEdit } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 import moment from 'moment';
 
 const TechnicianPortal = () => {
@@ -39,18 +40,22 @@ const TechnicianPortal = () => {
             setTechnicians(response.data.filter(t => t.isActive && t.isPresent));
         } catch (error) {
             console.error('Error fetching technicians:', error);
-            setError('Failed to load technicians');
+            const msg = 'Failed to load technicians';
+            setError(msg);
+            toast.error(msg);
         }
     };
 
     const fetchTodayBookings = async () => {
         setLoading(true);
         try {
-            const response = await bookingAPI.getToday();
+            const response = await bookingAPI.getToday({ date: moment().format('YYYY-MM-DD') });
             setBookings(response.data);
         } catch (error) {
             console.error('Error fetching bookings:', error);
-            setError('Failed to load bookings');
+            const msg = 'Failed to load bookings';
+            setError(msg);
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
@@ -89,12 +94,15 @@ const TechnicianPortal = () => {
                 notes: actionData.notes
             });
 
-            setSuccess(`Booking ${actionData.status} successfully!`);
+            const sMsg = `Booking ${actionData.status} successfully!`;
+            setSuccess(sMsg);
+            toast.success(sMsg);
             await fetchTodayBookings();
             handleCloseActionModal();
-            setTimeout(() => setSuccess(''), 3000);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to update booking');
+            const eMsg = err.response?.data?.message || 'Failed to update booking';
+            setError(eMsg);
+            toast.error(eMsg);
         }
     };
 
@@ -145,8 +153,6 @@ const TechnicianPortal = () => {
         <Container fluid className="py-5 bg-light min-vh-100">
             <h2 className="mb-4 fw-bold text-primary">Technician Portal</h2>
 
-            {error && <Alert variant="danger" onClose={() => setError('')} dismissible className="shadow-sm border-0">{error}</Alert>}
-            {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible className="shadow-sm border-0">{success}</Alert>}
 
             {/* Technician Selection */}
             <Card className="card-modern mb-4">
@@ -342,9 +348,10 @@ const TechnicianPortal = () => {
                                     <Table hover className="mb-0 align-middle">
                                         <thead className="bg-light">
                                             <tr>
-                                                <th className="ps-4 py-3 text-uppercase small text-muted letter-spacing-1">Vehicle</th>
-                                                <th className="py-3 text-uppercase small text-muted letter-spacing-1">Repair Notes</th>
-                                                <th className="pe-4 py-3 text-end text-uppercase small text-muted letter-spacing-1">Status</th>
+                                                <th className="ps-4 py-3 text-uppercase small text-muted letter-spacing-1">Vehicle & Customer</th>
+                                                <th className="py-3 text-uppercase small text-muted letter-spacing-1">Job Info</th>
+                                                <th className="py-3 text-uppercase small text-muted letter-spacing-1">Technician Notes</th>
+                                                <th className="pe-4 py-3 text-end text-uppercase small text-muted letter-spacing-1">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -357,12 +364,33 @@ const TechnicianPortal = () => {
                                                             </div>
                                                             <div>
                                                                 <div className="fw-bold text-dark">{booking.customer?.vehicleModel}</div>
-                                                                <small className="text-muted">{booking.customer?.name}</small>
+                                                                <div className="text-muted small">
+                                                                    <FaUser className="me-1" size={10} />
+                                                                    {booking.customer?.name} • <span className="text-primary fw-medium">{booking.customer?.phone}</span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="py-3 text-secondary">
-                                                        {booking.problemDescription}
+                                                    <td className="py-3">
+                                                        <div className="text-secondary small" style={{ maxWidth: '200px' }}>
+                                                            {booking.problemDescription}
+                                                        </div>
+                                                    </td>
+                                                    <td className="py-3">
+                                                        <div className="d-flex align-items-start gap-2">
+                                                            <div className="text-dark small flex-grow-1" style={{ maxWidth: '250px', minHeight: '20px' }}>
+                                                                {booking.notes || <span className="text-muted italic opacity-50">No notes yet...</span>}
+                                                            </div>
+                                                            <Button
+                                                                variant="link"
+                                                                size="sm"
+                                                                className="p-0 text-decoration-none text-primary"
+                                                                onClick={() => handleShowActionModal(booking, 'accepted')}
+                                                                title="Edit Notes"
+                                                            >
+                                                                <FaEdit size={14} />
+                                                            </Button>
+                                                        </div>
                                                     </td>
                                                     <td className="text-end pe-4 py-3">
                                                         <div className="d-flex gap-2 justify-content-end align-items-center">
@@ -404,7 +432,7 @@ const TechnicianPortal = () => {
             <Modal show={showActionModal} onHide={handleCloseActionModal} centered contentClassName="border-0 shadow-lg rounded-4">
                 <Modal.Header closeButton className="border-bottom-0 pb-0">
                     <Modal.Title className="fw-bold">
-                        {actionData.status === 'accepted' && <span className="text-success">Accept Job</span>}
+                        {actionData.status === 'accepted' && (selectedBooking?.status === 'accepted' ? <span className="text-primary">Update Job Notes</span> : <span className="text-success">Accept Job</span>)}
                         {actionData.status === 'declined' && <span className="text-danger">Decline Job</span>}
                         {actionData.status === 'not_today' && <span className="text-warning">Postpone Job</span>}
                         {actionData.status === 'repaired' && <span className="text-primary">Finish Repair</span>}
@@ -416,7 +444,10 @@ const TechnicianPortal = () => {
                             <div className="bg-light p-3 rounded-3 mb-3 border">
                                 <div className="d-flex justify-content-between mb-1">
                                     <span className="text-muted small text-uppercase fw-bold">Customer</span>
-                                    <span className="fw-bold text-dark">{selectedBooking.customer?.name}</span>
+                                    <div className="text-end">
+                                        <div className="fw-bold text-dark">{selectedBooking.customer?.name}</div>
+                                        <div className="text-muted small">{selectedBooking.customer?.phone}</div>
+                                    </div>
                                 </div>
                                 <div className="d-flex justify-content-between mb-1">
                                     <span className="text-muted small text-uppercase fw-bold">Vehicle</span>

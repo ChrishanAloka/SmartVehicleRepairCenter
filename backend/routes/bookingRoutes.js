@@ -10,7 +10,9 @@ const {
     getCustomerBookings,
     cancelExpiredBookings,
     submitReview,
-    quickRebook
+    quickRebook,
+    updateCustomer,
+    updateBooking
 } = require('../controllers/bookingController');
 const { protect } = require('../middleware/auth');
 
@@ -23,11 +25,13 @@ router.get('/customer/:identifier', getCustomerBookings);
 router.post('/cancel-expired', protect, cancelExpiredBookings);
 
 router.route('/:id')
-    .get(getBooking);
+    .get(getBooking)
+    .put(updateBooking);
 
 router.put('/:id/status', updateBookingStatus);
 router.put('/:id/payout', protect, payoutBooking);
 router.post('/:id/review', submitReview);
 router.put('/:id/rebook', quickRebook);
+router.put('/customer/:id', updateCustomer);
 
 module.exports = router;

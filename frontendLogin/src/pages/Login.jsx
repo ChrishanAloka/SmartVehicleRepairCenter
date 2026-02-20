@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const Login = () => {
     const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -27,7 +28,9 @@ const Login = () => {
             const loggedInUser = await login(credentials);
             navigate(loggedInUser?.role === 'admin' ? '/dashboard' : '/technician-portal');
         } catch (err) {
-            setError(err.response?.data?.message || 'Login failed');
+            const msg = err.response?.data?.message || 'Login failed';
+            setError(msg);
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
@@ -44,7 +47,6 @@ const Login = () => {
                                 <p className="text-muted">Vehicle Service Center - Admin Panel</p>
                             </div>
 
-                            {error && <Alert variant="danger">{error}</Alert>}
 
                             <Form onSubmit={handleSubmit}>
                                 <Form.Group className="mb-3">

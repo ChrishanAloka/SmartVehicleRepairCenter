@@ -23,7 +23,7 @@ const PublicView = () => {
         try {
             const [techRes, bookingRes, settingsRes] = await Promise.all([
                 technicianAPI.getAll(),
-                bookingAPI.getToday(),
+                bookingAPI.getToday({ date: moment().format('YYYY-MM-DD') }),
                 settingsAPI.get()
             ]);
 
@@ -76,10 +76,39 @@ const PublicView = () => {
         }).length;
     };
 
-    const formatStopwatch = (startTime) => {
+    const getAdjustedStartTime = (booking) => {
+        let startTime = booking.status === 'accepted' ? (booking.acceptedAt || booking.createdAt) : booking.createdAt;
+
+        // For pending bookings made before today, clamp wait time to shop opening time
+        if (booking.status === 'pending') {
+            const createdDate = moment(booking.createdAt).startOf('day');
+            const today = moment().startOf('day');
+
+            if (createdDate.isBefore(today) && settings?.openingTime) {
+                try {
+                    // format e.g. "08:00 AM"
+                    const shopOpeningToday = moment(settings.openingTime, 'hh:mm A');
+                    if (shopOpeningToday.isValid() && moment().isAfter(shopOpeningToday)) {
+                        startTime = shopOpeningToday;
+                    }
+                } catch (e) {
+                    console.error("Error parsing opening time", e);
+                }
+            }
+        }
+        return startTime;
+    };
+
+    const formatStopwatch = (booking) => {
+        const startTime = getAdjustedStartTime(booking);
         const diff = moment.duration(moment().diff(moment(startTime)));
-        const hours = Math.floor(diff.asHours());
+        const days = Math.floor(diff.asDays());
+        const hours = diff.hours();
         const minutes = diff.minutes();
+
+        if (days > 0) {
+            return `${days}d ${hours}h`;
+        }
         return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
     };
 
@@ -107,12 +136,20 @@ const PublicView = () => {
                             <div className="text-muted small fst-italic py-3 opacity-50">No one in this queue</div>
                         ) : (
                             bookingList.map((booking, i) => (
-                                <div key={i} className="text-center">
+                                <div key={i} className="text-center" style={{ minWidth: '90px' }}>
                                     <div className={`queue-man-icon text-${color} pulse-animation mb-1`}>
                                         <FaUser size={24} />
                                     </div>
-                                    <div className="text-muted fw-bold" style={{ fontSize: '0.65rem' }}>
-                                        {formatStopwatch(booking.status === 'accepted' ? (booking.acceptedAt || booking.createdAt) : booking.createdAt)}
+                                    <div className="text-dark fw-bold mb-0" style={{ fontSize: '0.75rem' }}>
+                                        {formatStopwatch(booking)}
+                                    </div>
+                                    <div className="mt-1">
+                                        <div className="text-primary fw-bold text-uppercase" style={{ fontSize: '0.65rem', lineHeight: '1.2' }}>
+                                            {booking.customer?.vehicleNumber}
+                                        </div>
+                                        <div className="text-muted small fw-normal" style={{ fontSize: '0.6rem', lineHeight: '1' }}>
+                                            {booking.customer?.vehicleModel}
+                                        </div>
                                     </div>
                                 </div>
                             ))
@@ -154,26 +191,18 @@ const PublicView = () => {
                         )}
                     </div>
                     <div className="d-flex justify-content-center gap-3 flex-wrap">
-                        <Link to="/booking">
+                        <Link to="/bookings">
                             <Button size="lg" className="btn-primary-gradient btn-pill shadow-lg border-0 px-5 py-3">
-                                <FaCalendarPlus className="me-2" />
-                                BOOK NOW
+                                <FaTools className="me-2" />
+                                MANAGE BOOKINGS
                             </Button>
                         </Link>
                         <Link to="/customer-lookup">
                             <Button variant="light" size="lg" className="btn-pill shadow-sm border px-5 py-3 text-primary fw-bold hover-lift">
                                 <FaUsers className="me-2" />
-                                CHECK MY STATUS
+                                CUSTOMER LOOKUP
                             </Button>
                         </Link>
-                        {isAuthenticated && (
-                            <Link to="/attendance">
-                                <Button variant="light" size="lg" className="btn-pill shadow-sm border px-5 py-3 text-secondary fw-bold hover-lift">
-                                    <FaCheckCircle className="me-2" />
-                                    STAFF ATTENDANCE
-                                </Button>
-                            </Link>
-                        )}
                     </div>
                 </div>
 
@@ -348,7 +377,7 @@ const PublicView = () => {
                                 <div className="rounded-circle bg-info bg-opacity-10 p-3 me-4">
                                     <FaTools className="text-info" size={24} />
                                 </div>
-                                <div>
+                                <div className="lh-sm">
                                     <h6 className="fw-bold text-dark mb-1 text-uppercase small letter-spacing-1">Service Quality</h6>
                                     <p className="mb-0 text-muted">
                                         Professional repairs with real-time status tracking.

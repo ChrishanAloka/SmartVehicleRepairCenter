@@ -34,6 +34,10 @@ const shopSettingsSchema = new mongoose.Schema({
     },
     shopEmail: {
         type: String
+    },
+    currency: {
+        type: String,
+        default: 'LKR'
     }
 }, {
     timestamps: true

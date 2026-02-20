@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://smartvehiclerepaircenter.onrender.com/api';
+const API_URL = 'http://localhost:5000/api';
 
 // Create axios instance
 const api = axios.create({
@@ -46,7 +46,7 @@ export const technicianAPI = {
 // Booking API
 export const bookingAPI = {
     getAll: (params) => api.get('/bookings', { params }),
-    getToday: () => api.get('/bookings/today'),
+    getToday: (params) => api.get('/bookings/today', { params }),
     getById: (id) => api.get(`/bookings/${id}`),
     getByCustomer: (identifier) => api.get(`/bookings/customer/${identifier}`),
     create: (data) => api.post('/bookings', data),
@@ -54,7 +54,9 @@ export const bookingAPI = {
     payout: (id, amount) => api.put(`/bookings/${id}/payout`, { amount }),
     cancelExpired: () => api.post('/bookings/cancel-expired'),
     submitReview: (id, data) => api.post(`/bookings/${id}/review`, data),
-    rebook: (id, data) => api.put(`/bookings/${id}/rebook`, data)
+    rebook: (id, data) => api.put(`/bookings/${id}/rebook`, data),
+    updateCustomer: (id, data) => api.put(`/bookings/customer/${id}`, data),
+    update: (id, data) => api.put(`/bookings/${id}`, data)
 };
 
 // Invoice API

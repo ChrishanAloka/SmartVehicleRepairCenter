@@ -214,3 +214,26 @@ h6 {
 .scale-12 {
     transform: scale(1.25);
 }
+
+/* DatePicker Highlighting */
+.react-datepicker-wrapper {
+    width: 100%;
+}
+
+.react-datepicker__day--highlighted {
+    background-color: #e3f2fd !important;
+    color: #0d6efd !important;
+    font-weight: bold;
+    border-radius: 50% !important;
+}
+
+.react-datepicker__day--highlighted:hover {
+    background-color: #0d6efd !important;
+    color: white !important;
+}
+
+.react-datepicker__day--selected {
+    background-color: #0d6efd !important;
+    color: white !important;
+    border-radius: 50% !important;
+}

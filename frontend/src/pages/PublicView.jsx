@@ -23,7 +23,7 @@ const PublicView = () => {
         try {
             const [techRes, bookingRes, settingsRes] = await Promise.all([
                 technicianAPI.getAll(),
-                bookingAPI.getToday(),
+                bookingAPI.getToday({ date: moment().format('YYYY-MM-DD') }),
                 settingsAPI.get()
             ]);
 
@@ -76,10 +76,37 @@ const PublicView = () => {
         }).length;
     };
 
-    const formatStopwatch = (startTime) => {
+    const getAdjustedStartTime = (booking) => {
+        let startTime = booking.status === 'accepted' ? (booking.acceptedAt || booking.createdAt) : booking.createdAt;
+
+        // Clamp wait/repair time to shop opening time for entries from previous days
+        const entryDate = moment(startTime).startOf('day');
+        const today = moment().startOf('day');
+
+        if (entryDate.isBefore(today) && settings?.openingTime) {
+            try {
+                // format e.g. "08:00 AM"
+                const shopOpeningToday = moment(settings.openingTime, 'hh:mm A');
+                if (shopOpeningToday.isValid() && moment().isAfter(shopOpeningToday)) {
+                    startTime = shopOpeningToday;
+                }
+            } catch (e) {
+                console.error("Error parsing opening time", e);
+            }
+        }
+        return startTime;
+    };
+
+    const formatStopwatch = (booking) => {
+        const startTime = getAdjustedStartTime(booking);
         const diff = moment.duration(moment().diff(moment(startTime)));
-        const hours = Math.floor(diff.asHours());
+        const days = Math.floor(diff.asDays());
+        const hours = diff.hours();
         const minutes = diff.minutes();
+
+        if (days > 0) {
+            return `${days}d ${hours}h`;
+        }
         return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
     };
 
@@ -112,7 +139,7 @@ const PublicView = () => {
                                         <FaUser size={24} />
                                     </div>
                                     <div className="text-muted fw-bold" style={{ fontSize: '0.65rem' }}>
-                                        {formatStopwatch(booking.status === 'accepted' ? (booking.acceptedAt || booking.createdAt) : booking.createdAt)}
+                                        {formatStopwatch(booking)}
                                     </div>
                                 </div>
                             ))

@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button, Table, Alert, Badge } from 'react-bootstrap';
 import { settingsAPI } from '../utils/api';
-import { FaSave, FaPlus, FaTrash, FaClock, FaCalendarAlt } from 'react-icons/fa';
+import { useSettings } from '../context/SettingsContext';
+import { FaSave, FaPlus, FaTrash, FaClock, FaCalendarAlt, FaMoneyBillWave } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 import moment from 'moment';
 
 const Settings = () => {
+    const { fetchSettings: fetchGlobalSettings, updateGlobalSettings } = useSettings();
     const [settings, setSettings] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -16,7 +19,8 @@ const Settings = () => {
         shopName: '',
         shopAddress: '',
         shopPhone: '',
-        shopEmail: ''
+        shopEmail: '',
+        currency: 'LKR'
     });
 
     const [holidayData, setHolidayData] = useState({
@@ -38,7 +42,8 @@ const Settings = () => {
                 shopName: response.data.shopName || '',
                 shopAddress: response.data.shopAddress || '',
                 shopPhone: response.data.shopPhone || '',
-                shopEmail: response.data.shopEmail || ''
+                shopEmail: response.data.shopEmail || '',
+                currency: response.data.currency || 'LKR'
             });
         } catch (error) {
             console.error('Error fetching settings:', error);
@@ -62,11 +67,15 @@ const Settings = () => {
 
         try {
             await settingsAPI.update(shopData);
-            setSuccess('Shop settings updated successfully!');
+            const sMsg = 'Shop settings updated successfully!';
+            setSuccess(sMsg);
+            toast.success(sMsg);
+            updateGlobalSettings(shopData);
             await fetchSettings();
-            setTimeout(() => setSuccess(''), 3000);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to update settings');
+            const eMsg = err.response?.data?.message || 'Failed to update settings';
+            setError(eMsg);
+            toast.error(eMsg);
         } finally {
             setLoading(false);
         }
@@ -78,18 +87,23 @@ const Settings = () => {
         setSuccess('');
 
         if (!holidayData.date || !holidayData.reason) {
-            setError('Please fill in all holiday fields');
+            const msg = 'Please fill in all holiday fields';
+            setError(msg);
+            toast.error(msg);
             return;
         }
 
         try {
             await settingsAPI.addHoliday(holidayData);
-            setSuccess('Holiday added successfully!');
+            const sMsg = 'Holiday added successfully!';
+            setSuccess(sMsg);
+            toast.success(sMsg);
             setHolidayData({ date: '', reason: '' });
             await fetchSettings();
-            setTimeout(() => setSuccess(''), 3000);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to add holiday');
+            const eMsg = err.response?.data?.message || 'Failed to add holiday';
+            setError(eMsg);
+            toast.error(eMsg);
         }
     };
 
@@ -97,11 +111,14 @@ const Settings = () => {
         if (window.confirm('Are you sure you want to remove this holiday?')) {
             try {
                 await settingsAPI.removeHoliday(holidayId);
-                setSuccess('Holiday removed successfully!');
+                const sMsg = 'Holiday removed successfully!';
+                setSuccess(sMsg);
+                toast.success(sMsg);
                 await fetchSettings();
-                setTimeout(() => setSuccess(''), 3000);
             } catch (err) {
-                setError(err.response?.data?.message || 'Failed to remove holiday');
+                const eMsg = err.response?.data?.message || 'Failed to remove holiday';
+                setError(eMsg);
+                toast.error(eMsg);
             }
         }
     };
@@ -114,8 +131,6 @@ const Settings = () => {
         <Container fluid className="py-4">
             <h2 className="mb-4">Shop Settings</h2>
 
-            {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
-            {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
 
             <Row>
                 {/* Shop Information */}
@@ -208,6 +223,33 @@ const Settings = () => {
                                                 onChange={handleShopChange}
                                                 required
                                             />
+                                        </Form.Group>
+                                    </Col>
+                                </Row>
+
+                                <hr />
+
+                                <h6 className="mb-3">Financial Settings</h6>
+                                <Row>
+                                    <Col md={12}>
+                                        <Form.Group className="mb-3">
+                                            <Form.Label><FaMoneyBillWave className="me-2" />Preferred Currency Symbol</Form.Label>
+                                            <Form.Select
+                                                name="currency"
+                                                value={shopData.currency}
+                                                onChange={handleShopChange}
+                                            >
+                                                <option value="LKR">LKR (Rs.)</option>
+                                                <option value="$">$ (USD)</option>
+                                                <option value="€">€ (EUR)</option>
+                                                <option value="£">£ (GBP)</option>
+                                                <option value="¥">¥ (JPY)</option>
+                                                <option value="AED">AED</option>
+                                                <option value="SAR">SAR</option>
+                                            </Form.Select>
+                                            <Form.Text className="text-muted">
+                                                This symbol will be used for all invoices and quotations.
+                                            </Form.Text>
                                         </Form.Group>
                                     </Col>
                                 </Row>
@@ -349,7 +391,7 @@ const Settings = () => {
                                         <p className="mb-0">{settings?.shopName || 'Not set'}</p>
                                     </div>
                                 </Col>
-                                <Col md={4}>
+                                <Col md={3}>
                                     <div className="mb-3">
                                         <h6 className="text-muted mb-2">Operating Hours</h6>
                                         <p className="mb-0">
@@ -357,7 +399,15 @@ const Settings = () => {
                                         </p>
                                     </div>
                                 </Col>
-                                <Col md={4}>
+                                <Col md={3}>
+                                    <div className="mb-3">
+                                        <h6 className="text-muted mb-2">Currency</h6>
+                                        <p className="mb-0">
+                                            <Badge bg="primary">{settings?.currency}</Badge>
+                                        </p>
+                                    </div>
+                                </Col>
+                                <Col md={3}>
                                     <div className="mb-3">
                                         <h6 className="text-muted mb-2">Total Holidays</h6>
                                         <p className="mb-0">

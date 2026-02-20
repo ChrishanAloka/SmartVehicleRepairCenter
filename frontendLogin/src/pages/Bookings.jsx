@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Badge, Form, Alert, Modal } from 'react-bootstrap';
 import { bookingAPI, technicianAPI } from '../utils/api';
+import { useSettings } from '../context/SettingsContext';
 import { FaCalendarAlt, FaFilter, FaSync } from 'react-icons/fa';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import toast from 'react-hot-toast';
 import moment from 'moment';
 
 const Bookings = () => {
+    const { settings } = useSettings();
     const [bookings, setBookings] = useState([]);
     const [technicians, setTechnicians] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -23,11 +28,24 @@ const Bookings = () => {
         technicianId: '',
         notes: ''
     });
+    const [highlightDates, setHighlightDates] = useState([]);
 
     useEffect(() => {
         fetchBookings();
         fetchTechnicians();
+        fetchHighlightDates();
     }, []);
+
+    const fetchHighlightDates = async () => {
+        try {
+            // Fetch all bookings to get highlight dates
+            const response = await bookingAPI.getAll();
+            const dates = response.data.map(b => new Date(moment(b.bookingDate).format('YYYY-MM-DD')));
+            setHighlightDates(dates);
+        } catch (error) {
+            console.error('Error fetching highlight dates:', error);
+        }
+    };
 
     const fetchBookings = async () => {
         setLoading(true);
@@ -102,12 +120,15 @@ const Bookings = () => {
                 notes: editData.notes
             });
 
-            setSuccess('Booking status updated successfully');
+            const sMsg = 'Booking status updated successfully';
+            setSuccess(sMsg);
+            toast.success(sMsg);
             setShowEditStatusModal(false);
             fetchBookings();
-            setTimeout(() => setSuccess(''), 3000);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to update status');
+            const eMsg = err.response?.data?.message || 'Failed to update status';
+            setError(eMsg);
+            toast.error(eMsg);
         }
     };
 
@@ -153,8 +174,6 @@ const Bookings = () => {
                 </Button>
             </div>
 
-            {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
-            {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
 
             {/* Statistics Cards */}
             <Row className="g-3 mb-4">
@@ -203,13 +222,18 @@ const Bookings = () => {
                 <Card.Body>
                     <Row>
                         <Col md={3}>
-                            <Form.Group className="mb-3">
+                            <Form.Group className="mb-3 d-flex flex-column">
                                 <Form.Label>Date</Form.Label>
-                                <Form.Control
-                                    type="date"
-                                    name="date"
-                                    value={filters.date}
-                                    onChange={handleFilterChange}
+                                <DatePicker
+                                    selected={filters.date ? new Date(filters.date) : null}
+                                    onChange={(date) => {
+                                        const formattedDate = date ? moment(date).format('YYYY-MM-DD') : '';
+                                        setFilters({ ...filters, date: formattedDate });
+                                    }}
+                                    dateFormat="yyyy-MM-dd"
+                                    className="form-control"
+                                    placeholderText="Select date"
+                                    highlightDates={highlightDates}
                                 />
                             </Form.Group>
                         </Col>
@@ -335,7 +359,7 @@ const Bookings = () => {
                                             <td>{getStatusBadge(booking.status)}</td>
                                             <td>
                                                 {booking.isPaidOut ? (
-                                                    <Badge bg="success">Paid ${booking.amount?.toFixed(2) || '0.00'}</Badge>
+                                                    <Badge bg="success">Paid {settings.currency} {booking.amount?.toFixed(2) || '0.00'}</Badge>
                                                 ) : (
                                                     <Badge bg="secondary">Unpaid</Badge>
                                                 )}
@@ -369,8 +393,9 @@ const Bookings = () => {
                                                                             notes: 'Marked done from admin panel'
                                                                         });
                                                                         fetchBookings();
+                                                                        toast.success('Repair marked as done');
                                                                     } catch (err) {
-                                                                        alert('Failed to update: ' + (err.response?.data?.message || err.message));
+                                                                        toast.error('Failed to update: ' + (err.response?.data?.message || err.message));
                                                                     }
                                                                 }
                                                             }}
@@ -465,7 +490,7 @@ const Bookings = () => {
                                 <div>
                                     <h6>Payment Information</h6>
                                     <Alert variant="success">
-                                        <strong>Paid:</strong> ${selectedBooking.amount?.toFixed(2) || '0.00'}
+                                        <strong>Paid:</strong> {settings.currency} {selectedBooking.amount?.toFixed(2) || '0.00'}
                                     </Alert>
                                 </div>
                             )}

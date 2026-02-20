@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Modal, Form, Alert, Badge } from 'react-bootstrap';
 import { technicianAPI } from '../utils/api';
-import { FaPlus, FaEdit, FaTrash, FaQrcode, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaQrcode, FaCheckCircle, FaTimesCircle, FaCoins } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 import moment from 'moment';
 
 const Technicians = () => {
@@ -83,10 +84,14 @@ const Technicians = () => {
         try {
             if (selectedTechnician) {
                 await technicianAPI.update(selectedTechnician._id, formData);
-                setSuccess('Technician updated successfully!');
+                const sMsg = 'Technician updated successfully!';
+                setSuccess(sMsg);
+                toast.success(sMsg);
             } else {
                 await technicianAPI.create(formData);
-                setSuccess('Technician created successfully!');
+                const sMsg = 'Technician created successfully!';
+                setSuccess(sMsg);
+                toast.success(sMsg);
             }
 
             await fetchTechnicians();
@@ -94,7 +99,9 @@ const Technicians = () => {
                 handleCloseModal();
             }, 1500);
         } catch (err) {
-            setError(err.response?.data?.message || 'Operation failed');
+            const eMsg = err.response?.data?.message || 'Operation failed';
+            setError(eMsg);
+            toast.error(eMsg);
         } finally {
             setLoading(false);
         }
@@ -104,12 +111,14 @@ const Technicians = () => {
         if (window.confirm('Are you sure you want to delete this technician?')) {
             try {
                 await technicianAPI.delete(id);
-                setSuccess('Technician deleted successfully!');
+                const sMsg = 'Technician deleted successfully!';
+                setSuccess(sMsg);
+                toast.success(sMsg);
                 await fetchTechnicians();
-                setTimeout(() => setSuccess(''), 3000);
             } catch (err) {
-                setError(err.response?.data?.message || 'Delete failed');
-                setTimeout(() => setError(''), 3000);
+                const eMsg = err.response?.data?.message || 'Delete failed';
+                setError(eMsg);
+                toast.error(eMsg);
             }
         }
     };
@@ -121,8 +130,9 @@ const Technicians = () => {
             });
             await fetchTechnicians();
         } catch (err) {
-            setError(err.response?.data?.message || 'Update failed');
-            setTimeout(() => setError(''), 3000);
+            const eMsg = err.response?.data?.message || 'Update failed';
+            setError(eMsg);
+            toast.error(eMsg);
         }
     };
 
@@ -187,8 +197,6 @@ const Technicians = () => {
                 </Button>
             </div>
 
-            {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
-            {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
 
             <Card className="shadow-sm border-0">
                 <Card.Body className="p-0">
@@ -200,6 +208,7 @@ const Technicians = () => {
                                     <th>Name</th>
                                     <th>Email</th>
                                     <th>Phone</th>
+                                    <th>Total Coins</th>
                                     <th>Specialization</th>
                                     <th>Status</th>
                                     <th>Last Check-in</th>
@@ -222,6 +231,11 @@ const Technicians = () => {
                                             <td>{technician.name}</td>
                                             <td>{technician.email}</td>
                                             <td>{technician.phone}</td>
+                                            <td>
+                                                <Badge bg="warning" text="dark" className="d-flex align-items-center gap-2" style={{ width: 'fit-content' }}>
+                                                    <FaCoins /> {technician.totalCoins || 0}
+                                                </Badge>
+                                            </td>
                                             <td>
                                                 {technician.specialization ? (
                                                     <span className="text-muted">{technician.specialization}</span>
@@ -302,8 +316,6 @@ const Technicians = () => {
                 </Modal.Header>
                 <Form onSubmit={handleSubmit}>
                     <Modal.Body>
-                        {error && <Alert variant="danger">{error}</Alert>}
-                        {success && <Alert variant="success">{success}</Alert>}
 
                         <Row>
                             <Col md={6}>

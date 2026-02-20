@@ -12,7 +12,8 @@ const Dashboard = () => {
         todayBookings: 0,
         pendingBookings: 0,
         acceptedBookings: 0,
-        repairedBookings: 0
+        repairedBookings: 0,
+        averageRating: 0
     });
     const [recentBookings, setRecentBookings] = useState([]);
     const [reviews, setReviews] = useState([]);
@@ -36,23 +37,27 @@ const Dashboard = () => {
             const bookings = bookingsRes.data;
             const allBookings = allBookingsRes.data;
 
+            // Extract and calculate reviews
+            const allReviews = allBookings.filter(b => b.rating && b.rating > 0);
+            const avgRating = allReviews.length > 0
+                ? (allReviews.reduce((sum, b) => sum + b.rating, 0) / allReviews.length).toFixed(1)
+                : "0.0";
+
             setStats({
                 totalTechnicians: techRes.data.length,
                 presentTechnicians: presentTechRes.data.length,
                 todayBookings: bookings.length,
                 pendingBookings: bookings.filter(b => b.status === 'pending').length,
                 acceptedBookings: bookings.filter(b => b.status === 'accepted' && !b.isPaidOut).length,
-                repairedBookings: bookings.filter(b => b.status === 'repaired' && !b.isPaidOut).length
+                repairedBookings: bookings.filter(b => b.status === 'repaired' && !b.isPaidOut).length,
+                averageRating: avgRating
             });
 
             setRecentBookings(bookings.slice(0, 10));
 
-            // Extract reviews
-            const extractedReviews = allBookings
-                .filter(b => b.review && b.review.rating > 0)
-                .sort((a, b) => new Date(b.review.createdAt) - new Date(a.review.createdAt));
-
-            setReviews(extractedReviews.slice(0, 6));
+            // Sort by latest feedback (using updatedAt)
+            const sortedReviews = [...allReviews].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+            setReviews(sortedReviews.slice(0, 6));
 
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
@@ -76,9 +81,7 @@ const Dashboard = () => {
     };
 
     const calculateAverageRating = () => {
-        if (reviews.length === 0) return 0;
-        const sum = reviews.reduce((acc, b) => acc + b.review.rating, 0);
-        return (sum / reviews.length).toFixed(1);
+        return stats.averageRating || 0;
     };
 
     const getStatusBadge = (status) => {
@@ -324,12 +327,12 @@ const Dashboard = () => {
                                             <div className="d-flex justify-content-between align-items-start mb-2">
                                                 <div className="fw-bold small">{b.customer?.name}</div>
                                                 <div className="d-flex gap-1">
-                                                    {renderStars(b.review.rating)}
+                                                    {renderStars(b.rating)}
                                                 </div>
                                             </div>
-                                            {b.review.comment && (
+                                            {b.reviewComment && (
                                                 <p className="small text-muted mb-2 fst-italic">
-                                                    "{b.review.comment.substring(0, 80)}{b.review.comment.length > 80 ? '...' : ''}"
+                                                    "{b.reviewComment.substring(0, 80)}{b.reviewComment.length > 80 ? '...' : ''}"
                                                 </p>
                                             )}
                                             <div className="d-flex justify-content-between align-items-center mt-1">
@@ -337,7 +340,7 @@ const Dashboard = () => {
                                                     {b.customer?.vehicleNumber}
                                                 </Badge>
                                                 <small className="text-muted x-small">
-                                                    {moment(b.review.createdAt).fromNow()}
+                                                    {moment(b.updatedAt).fromNow()}
                                                 </small>
                                             </div>
                                         </div>

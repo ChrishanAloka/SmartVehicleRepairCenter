@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Form, Alert, Badge, Spinner, Table, Pagination } from 'react-bootstrap';
 import { technicianAPI } from '../utils/api';
 import { FaUserCheck, FaUserTimes, FaIdCard, FaSearch, FaCheckCircle, FaHistory, FaUsers } from 'react-icons/fa';
+import toast from 'react-hot-toast';
 import moment from 'moment';
 
 const Attendance = () => {
@@ -49,7 +50,9 @@ const Attendance = () => {
         if (found) {
             setTechnician(found);
         } else {
-            setError('Active technician not found with this Employee ID.');
+            const msg = 'Active technician not found with this Employee ID.';
+            setError(msg);
+            toast.error(msg);
         }
     };
 
@@ -62,10 +65,14 @@ const Attendance = () => {
             let response;
             if (status === 'in') {
                 response = await technicianAPI.checkIn(tech.employeeId);
-                setSuccess(`${tech.name} marked as PRESENT for today.`);
+                const sMsg = `${tech.name} marked as PRESENT for today.`;
+                setSuccess(sMsg);
+                toast.success(sMsg);
             } else {
                 response = await technicianAPI.checkOut(tech.employeeId);
-                setSuccess(`${tech.name} marked as OFF-DUTY.`);
+                const sMsg = `${tech.name} marked as OFF-DUTY.`;
+                setSuccess(sMsg);
+                toast.success(sMsg);
             }
 
             // Refresh the list and search result
@@ -84,7 +91,9 @@ const Attendance = () => {
             setRecentLogs([newLog, ...recentLogs.slice(0, 4)]);
 
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to update attendance.');
+            const eMsg = err.response?.data?.message || 'Failed to update attendance.';
+            setError(eMsg);
+            toast.error(eMsg);
         } finally {
             setMarking(false);
         }
@@ -250,8 +259,8 @@ const Attendance = () => {
                                         </div>
                                     </div>
                                 )}
-                                {error && <Alert variant="danger" className="border-0 small mt-3 py-2 rounded-3 shadow-sm">{error}</Alert>}
-                                {success && <Alert variant="success" className="border-0 small mt-3 py-2 rounded-3 shadow-sm">{success}</Alert>}
+                                {/* {error && <Alert variant="danger" className="border-0 small mt-3 py-2 rounded-3 shadow-sm">{error}</Alert>} */}
+                                {/* {success && <Alert variant="success" className="border-0 small mt-3 py-2 rounded-3 shadow-sm">{success}</Alert>} */}
                             </Card.Body>
                         </Card>
 
