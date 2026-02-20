@@ -24,6 +24,13 @@ import QRScanner from './pages/QRScanner';
 // Import Bootstrap CSS
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
+import usePushNotifications from './hooks/usePushNotifications';
+
+// Inner wrapper so the hook can access AuthContext
+const PushBootstrapper = () => {
+    usePushNotifications();
+    return null;
+};
 
 function App() {
     return (
@@ -31,6 +38,7 @@ function App() {
             <SettingsProvider>
                 <Toaster position="top-right" reverseOrder={false} />
                 <Router>
+                    <PushBootstrapper />
                     <AppLayout>
                         <Routes>
                             {/* Public Routes */}
