@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Modal, Button } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
 import {
     FaBars, FaChevronLeft, FaUserCircle, FaSignOutAlt,
-    FaDownload, FaSync, FaApple, FaChevronDown, FaBell
+    FaDownload, FaSync, FaApple, FaChevronDown, FaBell,
+    FaDatabase, FaTrashAlt
 } from 'react-icons/fa';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
@@ -15,6 +16,8 @@ const TopNavbar = ({ onToggle, isCollapsed, onMobileToggle, showSidebarToggles =
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [isIOS, setIsIOS] = useState(false);
     const [showIOSPrompt, setShowIOSPrompt] = useState(false);
+    const [storageInfo, setStorageInfo] = useState({ size: 0, label: '0 B' });
+    const [clearSuccess, setClearSuccess] = useState(false);
     const dropdownRef = useRef(null);
 
     const {
@@ -57,6 +60,51 @@ const TopNavbar = ({ onToggle, isCollapsed, onMobileToggle, showSidebarToggles =
         };
     }, []);
 
+    // Calculate storage size
+    const calcStorageSize = useCallback(() => {
+        let bytes = 0;
+
+        // localStorage
+        try {
+            for (let key in localStorage) {
+                if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
+                    bytes += (localStorage.getItem(key) || '').length * 2; // UTF-16 = 2 bytes/char
+                    bytes += key.length * 2;
+                }
+            }
+        } catch (_) { }
+
+        // sessionStorage
+        try {
+            for (let key in sessionStorage) {
+                if (Object.prototype.hasOwnProperty.call(sessionStorage, key)) {
+                    bytes += (sessionStorage.getItem(key) || '').length * 2;
+                    bytes += key.length * 2;
+                }
+            }
+        } catch (_) { }
+
+        // Cookies
+        try {
+            bytes += new Blob([document.cookie]).size;
+        } catch (_) { }
+
+        let label;
+        if (bytes < 1024) label = `${bytes} B`;
+        else if (bytes < 1024 * 1024) label = `${(bytes / 1024).toFixed(1)} KB`;
+        else label = `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+
+        setStorageInfo({ size: bytes, label });
+    }, []);
+
+    // Recalculate storage whenever dropdown opens
+    useEffect(() => {
+        if (dropdownOpen) {
+            calcStorageSize();
+            setClearSuccess(false);
+        }
+    }, [dropdownOpen, calcStorageSize]);
+
     const handleInstall = async () => {
         if (isIOS) {
             setShowIOSPrompt(true);
@@ -79,6 +127,20 @@ const TopNavbar = ({ onToggle, isCollapsed, onMobileToggle, showSidebarToggles =
         logout();
         navigate('/login');
         setDropdownOpen(false);
+    };
+
+    const handleClearStorage = () => {
+        try { localStorage.clear(); } catch (_) { }
+        try { sessionStorage.clear(); } catch (_) { }
+        // Clear cookies
+        try {
+            document.cookie.split(';').forEach(cookie => {
+                const name = cookie.split('=')[0].trim();
+                document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+            });
+        } catch (_) { }
+        setClearSuccess(true);
+        calcStorageSize();
     };
 
     // Show a flag if there's an update or install available
@@ -188,6 +250,34 @@ const TopNavbar = ({ onToggle, isCollapsed, onMobileToggle, showSidebarToggles =
                                         <span className="top-navbar-dropdown-badge install-badge">INSTALL</span>
                                     </button>
                                 )}
+
+                                {/* Storage Info */}
+                                <div className="top-navbar-dropdown-divider" />
+                                <div className="top-navbar-storage-section">
+                                    <div className="top-navbar-storage-row">
+                                        <div className="d-flex align-items-center gap-2">
+                                            <FaDatabase size={12} className="text-muted" />
+                                            <span className="top-navbar-storage-label">Stored Data</span>
+                                        </div>
+                                        <div className="d-flex align-items-center gap-2">
+                                            <span className={`top-navbar-storage-size ${storageInfo.size > 50 * 1024 ? 'warn' : ''}`}>
+                                                {storageInfo.label}
+                                            </span>
+                                            <button
+                                                className="top-navbar-clear-btn"
+                                                onClick={handleClearStorage}
+                                                title="Clear all storage & cookies"
+                                            >
+                                                <FaTrashAlt size={11} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {clearSuccess && (
+                                        <div className="top-navbar-clear-success">
+                                            ✓ Storage cleared
+                                        </div>
+                                    )}
+                                </div>
 
                                 {/* Logout / Login */}
                                 {isAuthenticated ? (
@@ -360,6 +450,62 @@ const TopNavbar = ({ onToggle, isCollapsed, onMobileToggle, showSidebarToggles =
                 }
                 @keyframes spin {
                     to { transform: rotate(360deg); }
+                }
+                .top-navbar-storage-section {
+                    padding: 10px 16px;
+                    background: #fafafa;
+                }
+                .top-navbar-storage-row {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                }
+                .top-navbar-storage-label {
+                    font-size: 0.78rem;
+                    color: #6b7280;
+                    font-weight: 500;
+                }
+                .top-navbar-storage-size {
+                    font-size: 0.78rem;
+                    font-weight: 700;
+                    color: #374151;
+                    background: #f0f4f8;
+                    padding: 2px 8px;
+                    border-radius: 50rem;
+                }
+                .top-navbar-storage-size.warn {
+                    color: #d97706;
+                    background: #fef3c7;
+                }
+                .top-navbar-clear-btn {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 26px;
+                    height: 26px;
+                    border: none;
+                    border-radius: 50%;
+                    background: #fee2e2;
+                    color: #ef4444;
+                    cursor: pointer;
+                    transition: background 0.15s, transform 0.15s;
+                    flex-shrink: 0;
+                }
+                .top-navbar-clear-btn:hover {
+                    background: #fecaca;
+                    transform: scale(1.1);
+                }
+                .top-navbar-clear-success {
+                    font-size: 0.7rem;
+                    color: #059669;
+                    font-weight: 600;
+                    margin-top: 5px;
+                    text-align: right;
+                    animation: fade-in-up 0.3s ease;
+                }
+                @keyframes fade-in-up {
+                    from { opacity: 0; transform: translateY(4px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
             `}</style>
         </>
