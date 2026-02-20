@@ -8,8 +8,16 @@ const AppLayout = ({ children }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
+    // Not logged in — show a minimal layout with just the top navbar (for login page)
     if (!isAuthenticated) {
-        return <div className="min-vh-100">{children}</div>;
+        return (
+            <div className="d-flex flex-column min-vh-100">
+                <TopNavbar showSidebarToggles={false} />
+                <div className="flex-grow-1">
+                    {children}
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -23,7 +31,7 @@ const AppLayout = ({ children }) => {
             <div
                 className={`main-content flex-grow-1 d-flex flex-column ${isCollapsed ? 'collapsed' : ''}`}
                 onClick={() => {
-                    // On desktop, if sidebar is expanded, collapse it when clicking main content
+                    // On desktop, collapse sidebar when clicking main content
                     if (!isCollapsed && window.innerWidth > 991) {
                         setIsCollapsed(true);
                     }
@@ -33,6 +41,7 @@ const AppLayout = ({ children }) => {
                     onToggle={() => setIsCollapsed(!isCollapsed)}
                     isCollapsed={isCollapsed}
                     onMobileToggle={() => setShowMobileSidebar(!showMobileSidebar)}
+                    showSidebarToggles={true}
                 />
                 <main className="flex-grow-1">
                     {children}
