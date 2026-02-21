@@ -5,13 +5,11 @@ const AuthContext = createContext();
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within AuthProvider');
-    }
+    if (!context) throw new Error('useAuth must be used within AuthProvider');
     return context;
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -22,58 +20,91 @@ function urlBase64ToUint8Array(base64String) {
     return output;
 }
 
-const supported =
+const pushSupported =
     typeof window !== 'undefined' &&
     'serviceWorker' in navigator &&
     'PushManager' in window &&
     'Notification' in window;
 
 /**
- * Register a native push subscription for the current device.
- * Called automatically after a successful login.
- * Silently no-ops if the browser doesn't support push or if VAPID keys aren't set.
+ * Register a Web Push subscription for this device and save it to the backend.
+ *
+ * Flow:
+ *  1. Wait for the Service Worker to be active (navigator.serviceWorker.ready)
+ *  2. Get (or create) a PushSubscription from the browser
+ *  3. POST it to /api/notifications/subscribe (backend dedupes by endpoint)
+ *
+ * Called automatically 1.5 s after the user is authenticated.
+ * Also exported so NotificationBell can call it on explicit "Enable" click.
  */
-async function registerPushSubscription() {
-    if (!supported) return;
+export async function registerPushSubscription() {
+    if (!pushSupported) {
+        console.log('[Push] Not supported on this browser/OS');
+        return { ok: false, reason: 'unsupported' };
+    }
+
+    // Check current permission state first
+    const currentPerm = Notification.permission;
+    if (currentPerm === 'denied') {
+        console.log('[Push] Permission denied by user — cannot subscribe');
+        return { ok: false, reason: 'denied' };
+    }
+
     try {
+        // 1. Wait for active service worker
         const reg = await navigator.serviceWorker.ready;
+        console.log('[Push] Service worker ready. State:', reg.active?.state);
+
+        // 2. Get VAPID public key from backend
+        const { data: keyData } = await notificationAPI.getVapidPublicKey();
+
+        if (!keyData?.publicKey) {
+            console.warn('[Push] VAPID public key not set on server. Set VAPID_PUBLIC_KEY env var on Render.');
+            return { ok: false, reason: 'no_vapid_key' };
+        }
+
+        // 3. Check existing browser subscription
         let sub = await reg.pushManager.getSubscription();
 
         if (!sub) {
-            // Ask for permission
-            const perm = await Notification.requestPermission();
-            if (perm !== 'granted') return;
+            // 4. Ask for permission if not already granted
+            if (currentPerm !== 'granted') {
+                const perm = await Notification.requestPermission();
+                if (perm !== 'granted') {
+                    console.log('[Push] Permission not granted by user');
+                    return { ok: false, reason: 'permission_denied' };
+                }
+            }
 
-            // Fetch VAPID public key
-            const { data } = await notificationAPI.getVapidPublicKey();
-            if (!data?.publicKey) return;
-
+            // 5. Create new PushSubscription
             sub = await reg.pushManager.subscribe({
                 userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(data.publicKey)
+                applicationServerKey: urlBase64ToUint8Array(keyData.publicKey)
             });
+            console.log('[Push] New PushSubscription created:', sub.endpoint.substring(0, 50) + '...');
+        } else {
+            console.log('[Push] Existing PushSubscription found:', sub.endpoint.substring(0, 50) + '...');
         }
 
-        // Register with backend (deduped server-side)
-        await notificationAPI.subscribePush(sub.toJSON());
-        console.log('[Push] Subscription registered');
+        // 6. Always POST to backend — it dedupes by endpoint server-side
+        const { data: subData } = await notificationAPI.subscribePush(sub.toJSON());
+        console.log('[Push] ✅ Registered with backend:', subData);
+        return { ok: true, endpoint: sub.endpoint };
+
     } catch (err) {
-        console.warn('[Push] Registration failed:', err.message);
+        console.error('[Push] ❌ Registration failed:', err.message);
+        return { ok: false, reason: 'error', message: err.message };
     }
 }
 
-/**
- * Remove the push subscription from the backend on logout.
- */
 async function unregisterPushSubscription() {
-    if (!supported) return;
+    if (!pushSupported) return;
     try {
         const reg = await navigator.serviceWorker.ready;
         const sub = await reg.pushManager.getSubscription();
         if (!sub) return;
         await notificationAPI.unsubscribePush(sub.endpoint);
-        // Do NOT call sub.unsubscribe() — we want to keep the browser subscription
-        // intact so we can re-register it on next login without asking again.
+        // Keep browser subscription intact — re-registration on next login won't need permission again
         console.log('[Push] Subscription removed from backend');
     } catch (err) {
         console.warn('[Push] Unregister failed:', err.message);
@@ -87,16 +118,14 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const pushRegistered = useRef(false);
 
-    useEffect(() => {
-        checkAuth();
-    }, []);
+    useEffect(() => { checkAuth(); }, []);
 
-    // Auto-register push whenever user becomes authenticated
+    // Auto-register push whenever the user becomes authenticated
     useEffect(() => {
         if (user && !pushRegistered.current) {
             pushRegistered.current = true;
-            // Small delay so the SW is guaranteed active after first page load
-            setTimeout(registerPushSubscription, 2000);
+            // Small delay to ensure the SW is active on first page load
+            setTimeout(() => registerPushSubscription(), 1500);
         }
         if (!user) {
             pushRegistered.current = false;
@@ -118,33 +147,20 @@ export const AuthProvider = ({ children }) => {
     };
 
     const login = async (credentials) => {
-        try {
-            const response = await authAPI.login(credentials);
-            localStorage.setItem('token', response.data.token);
-            setUser(response.data);
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
+        const response = await authAPI.login(credentials);
+        localStorage.setItem('token', response.data.token);
+        setUser(response.data);
+        return response.data;
     };
 
     const logout = async () => {
-        // Remove push subscription from backend before clearing session
         await unregisterPushSubscription();
         localStorage.removeItem('token');
         setUser(null);
     };
 
-    const value = {
-        user,
-        loading,
-        login,
-        logout,
-        isAuthenticated: !!user
-    };
-
     return (
-        <AuthContext.Provider value={value}>
+        <AuthContext.Provider value={{ user, loading, login, logout, isAuthenticated: !!user }}>
             {!loading && children}
         </AuthContext.Provider>
     );

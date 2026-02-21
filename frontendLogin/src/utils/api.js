@@ -92,7 +92,9 @@ export const notificationAPI = {
     markAllRead: () => api.put('/notifications/read-all'),
     getVapidPublicKey: () => api.get('/notifications/vapid-public-key'),
     subscribePush: (subscription) => api.post('/notifications/subscribe', { subscription }),
-    unsubscribePush: (endpoint) => api.delete('/notifications/subscribe', { data: { endpoint } })
+    unsubscribePush: (endpoint) => api.delete('/notifications/subscribe', { data: { endpoint } }),
+    getPushStatus: () => api.get('/notifications/push-status'),
+    testPush: () => api.post('/notifications/test-push')
 };
 
 export default api;
