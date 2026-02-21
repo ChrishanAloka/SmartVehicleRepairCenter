@@ -311,7 +311,7 @@ const startReminderJob = () => {
         } catch (error) {
             console.error('[Reminder] Job error:', error.message);
         }
-    }, 30 * 60 * 1000); // 30 minutes
+    }, 10 * 60 * 1000); // 10 minutes
 };
 
 module.exports = {

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
 import { notificationAPI } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { registerPushSubscription } from '../context/AuthContext';
@@ -257,9 +256,8 @@ const NotificationBell = () => {
     };
 
     // ─── URL Trigger (Handle Push Click) ───────────────────────────────────────
-    const location = useLocation();
     useEffect(() => {
-        const params = new URLSearchParams(location.search);
+        const params = new URLSearchParams(window.location.search);
         if (params.get('openNotifs') === 'true') {
             setOpen(true);
             const notifId = params.get('notifId');
@@ -268,7 +266,7 @@ const NotificationBell = () => {
                 setTimeout(() => handleMarkOne(notifId), 1000);
             }
         }
-    }, [location.search]);
+    }, []); // Only run once on mount or when location changes manually if needed
 
     // ─── Actions Cont. ─────────────────────────────────────────────────────────
 
