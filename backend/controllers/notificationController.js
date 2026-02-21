@@ -2,12 +2,35 @@ const webpush = require('web-push');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 
-// ─── VAPID setup ──────────────────────────────────────────────────────────────
-webpush.setVapidDetails(
-    process.env.VAPID_EMAIL || 'mailto:admin@smartrepair.local',
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-);
+// ─── VAPID setup (lazy) ───────────────────────────────────────────────────────
+// We do NOT call setVapidDetails() at module load time because it throws if the
+// environment variables are not yet set (e.g. during local dev without a .env).
+// Instead we initialise once on first use and skip push sending if keys are absent.
+
+let vapidReady = false;
+
+const initVapid = () => {
+    if (vapidReady) return true;
+    const pub = process.env.VAPID_PUBLIC_KEY;
+    const priv = process.env.VAPID_PRIVATE_KEY;
+    if (!pub || !priv) {
+        console.warn('[Push] VAPID keys not set — native push notifications disabled.');
+        return false;
+    }
+    try {
+        webpush.setVapidDetails(
+            process.env.VAPID_EMAIL || 'mailto:admin@smartrepair.local',
+            pub,
+            priv
+        );
+        vapidReady = true;
+        console.log('[Push] VAPID initialised');
+        return true;
+    } catch (err) {
+        console.error('[Push] VAPID init failed:', err.message);
+        return false;
+    }
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -23,6 +46,7 @@ const getTargetUsers = async (audience) => {
 
 // Send a push notification to all subscriptions of a user, removing invalid ones
 const pushToUser = async (user, payload) => {
+    if (!initVapid()) return; // skip if VAPID not configured
     const validSubs = [];
     for (const sub of user.pushSubscriptions) {
         try {
