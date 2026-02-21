@@ -25,7 +25,15 @@ const TopNavbar = ({ onToggle, isCollapsed, onMobileToggle, showSidebarToggles =
         needRefresh: [needRefresh],
         updateServiceWorker,
     } = useRegisterSW({
-        onRegistered(r) { console.log('SW Registered:', r); },
+        onRegistered(r) {
+            console.log('SW Registered:', r);
+            // Check for updates every 10 seconds
+            if (r) {
+                setInterval(() => {
+                    r.update();
+                }, 10000);
+            }
+        },
         onRegisterError(error) { console.log('SW registration error', error); },
     });
 
