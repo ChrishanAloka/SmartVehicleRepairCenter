@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://smartvehiclerepaircenter.onrender.com/api';
+const API_URL = 'http://localhost:5000/api';
 
 // Create axios instance
 const api = axios.create({
@@ -83,6 +83,13 @@ export const settingsAPI = {
     addHoliday: (data) => api.post('/settings/holidays', data),
     removeHoliday: (holidayId) => api.delete(`/settings/holidays/${holidayId}`),
     isOpen: (date) => api.get('/settings/is-open', { params: { date } })
+};
+
+// Notification API
+export const notificationAPI = {
+    getAll: () => api.get('/notifications'),
+    markRead: (id) => api.put(`/notifications/${id}/read`),
+    markAllRead: () => api.put('/notifications/read-all')
 };
 
 export default api;

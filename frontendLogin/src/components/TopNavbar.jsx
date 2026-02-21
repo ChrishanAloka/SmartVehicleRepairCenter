@@ -8,6 +8,7 @@ import {
     FaDatabase, FaTrashAlt
 } from 'react-icons/fa';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import NotificationBell from './NotificationBell';
 
 const TopNavbar = ({ onToggle, isCollapsed, onMobileToggle, showSidebarToggles = true }) => {
     const { user, logout, isAuthenticated } = useAuth();
@@ -181,16 +182,19 @@ const TopNavbar = ({ onToggle, isCollapsed, onMobileToggle, showSidebarToggles =
                 </Link>
 
                 {/* Right side — User dropdown */}
-                <div className="ms-auto d-flex align-items-center gap-3">
+                <div className="ms-auto d-flex align-items-center gap-2">
                     {/* Username label on desktop (when logged in) */}
                     {isAuthenticated && (
-                        <div className="text-end d-none d-sm-block">
+                        <div className="text-end d-none d-sm-block me-1">
                             <div className="fw-bold small text-dark">{user?.username}</div>
                             <div className="text-muted x-small text-capitalize" style={{ fontSize: '0.65rem' }}>
                                 {user?.role} Account
                             </div>
                         </div>
                     )}
+
+                    {/* Notification Bell */}
+                    <NotificationBell />
 
                     {/* User icon with dropdown */}
                     <div ref={dropdownRef} style={{ position: 'relative' }}>

@@ -3,7 +3,7 @@ const Customer = require('../models/Customer');
 const Technician = require('../models/Technician');
 const ShopSettings = require('../models/ShopSettings');
 const moment = require('moment');
-const { sendPushToRoles } = require('../utils/pushNotification');
+const { createNotification } = require('./notificationController');
 
 const autoCleanupPending = async () => {
     try {
@@ -127,13 +127,13 @@ const createBooking = async (req, res) => {
 
         const populatedBooking = await Booking.findById(booking._id).populate('customer');
 
-        // Notify office staff of new booking
-        sendPushToRoles(['office_staff', 'admin'], {
-            title: '🔔 New Booking',
-            body: `${customer.name} (${customer.vehicleNumber}) booked for ${moment(bookingDate).format('MMM DD, YYYY')}`,
-            icon: '/logo.png',
-            tag: 'new-booking',
-            url: '/bookings'
+        // --- Notification: new booking for all staff ---
+        await createNotification({
+            type: 'new_booking',
+            audience: 'all_staff',
+            title: 'New Booking Received',
+            message: `${customer.name} (${customer.vehicleNumber}) booked for ${moment(bookingDate).format('MMM DD, YYYY')}`,
+            bookingId: booking._id
         });
 
         res.status(201).json(populatedBooking);
@@ -281,6 +281,18 @@ const updateBookingStatus = async (req, res) => {
             if (status === 'repaired' && booking.status !== 'repaired') {
                 technician.totalCoins = (technician.totalCoins || 0) + 1;
                 await technician.save();
+
+                // --- Notification: job done (admin only) ---
+                const populatedForNotif = await Booking.findById(booking._id).populate('customer');
+                const customerName = populatedForNotif?.customer?.name || 'A customer';
+                const vehicleNum = populatedForNotif?.customer?.vehicleNumber || '';
+                await createNotification({
+                    type: 'job_done',
+                    audience: 'admin_only',
+                    title: 'Job Completed by Technician',
+                    message: `${technician.name} marked the repair for ${customerName} (${vehicleNum}) as done`,
+                    bookingId: booking._id
+                });
             }
         }
 
@@ -302,20 +314,6 @@ const updateBookingStatus = async (req, res) => {
         const updatedBooking = await Booking.findById(booking._id)
             .populate('customer')
             .populate('technician');
-
-        // Notify admin + office_staff when a technician marks a job as repaired
-        if (status === 'repaired') {
-            const techName = updatedBooking.technician?.name || 'A technician';
-            const custName = updatedBooking.customer?.name || 'a customer';
-            const vehicleNum = updatedBooking.customer?.vehicleNumber || '';
-            sendPushToRoles(['admin', 'office_staff'], {
-                title: '✅ Job Completed',
-                body: `${techName} completed job for ${custName} (${vehicleNum})`,
-                icon: '/logo.png',
-                tag: 'job-repaired',
-                url: '/bookings'
-            });
-        }
 
         res.json(updatedBooking);
     } catch (error) {
@@ -422,16 +420,16 @@ const submitReview = async (req, res) => {
         booking.reviewComment = reviewComment;
         await booking.save();
 
-        const reviewedBooking = await Booking.findById(booking._id).populate('customer');
-        const stars = '⭐'.repeat(Math.min(rating || 0, 5));
-        const custName = reviewedBooking?.customer?.name || 'A customer';
-        // Notify admin of new review
-        sendPushToRoles(['admin'], {
-            title: `${stars} New Review`,
-            body: `${custName} left a ${rating}-star review`,
-            icon: '/logo.png',
-            tag: 'new-review',
-            url: '/bookings'
+        // --- Notification: customer submitted a review (admin only) ---
+        const populatedForReview = await Booking.findById(booking._id).populate('customer');
+        const reviewerName = populatedForReview?.customer?.name || 'A customer';
+        const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+        await createNotification({
+            type: 'new_review',
+            audience: 'admin_only',
+            title: 'New Customer Review',
+            message: `${reviewerName} left a ${rating}-star review ${stars}: "${reviewComment?.substring(0, 60) || ''}"`,
+            bookingId: booking._id
         });
 
         res.json({ message: 'Review submitted successfully', booking });

@@ -7,22 +7,7 @@ export default defineConfig({
         react(),
         VitePWA({
             registerType: 'prompt',
-            includeAssets: ['logo.png', 'sw-push.js'],
-            // Inject our custom push handler into Workbox's generated SW
-            injectManifest: undefined,
-            strategies: 'generateSW',
-            workbox: {
-                // Import the push notification handler
-                importScripts: ['/sw-push.js'],
-                // Cache strategy for assets
-                runtimeCaching: [
-                    {
-                        urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-                        handler: 'CacheFirst',
-                        options: { cacheName: 'google-fonts-cache', expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 } }
-                    }
-                ]
-            },
+            includeAssets: ['logo.png'],
             manifest: {
                 name: 'Smart Repair Staff Portal',
                 short_name: 'Smart Royal Staff',
@@ -51,7 +36,7 @@ export default defineConfig({
         port: 3000,
         proxy: {
             '/api': {
-                target: 'https://smartvehiclerepaircenter.onrender.com',
+                target: 'http://localhost:5000',
                 changeOrigin: true
             }
         }
