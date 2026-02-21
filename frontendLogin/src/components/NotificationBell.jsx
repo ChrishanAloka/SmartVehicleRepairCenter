@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { notificationAPI } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { registerPushSubscription } from '../context/AuthContext';
@@ -256,17 +257,17 @@ const NotificationBell = () => {
     };
 
     // ─── URL Trigger (Handle Push Click) ───────────────────────────────────────
+    const location = useLocation();
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
+        const params = new URLSearchParams(location.search);
         if (params.get('openNotifs') === 'true') {
-            setOpen(true);
+            setTimeout(() => setOpen(true), 300); // Small delay to let redirect finish
             const notifId = params.get('notifId');
             if (notifId) {
-                // Mark as read after a small delay
-                setTimeout(() => handleMarkOne(notifId), 1000);
+                setTimeout(() => handleMarkOne(notifId), 1200);
             }
         }
-    }, []); // Only run once on mount or when location changes manually if needed
+    }, [location.search]); // Listens for every URL change
 
     // ─── Actions Cont. ─────────────────────────────────────────────────────────
 
