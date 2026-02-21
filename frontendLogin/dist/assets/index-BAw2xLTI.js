@@ -305,10 +305,23 @@ E.version="2.30.1";FD(Be);E.fn=U;E.min=jC;E.max=DC;E.now=_C;E.utc=tr;E.unix=t5;E
                         border: 1px solid rgba(0,0,0,0.06);
                         z-index: 2100; overflow: hidden;
                         animation: panel-in 0.2s ease;
+                        transform-origin: top right;
                     }
                     @keyframes panel-in {
                         from { opacity: 0; transform: translateY(-10px) scale(0.97); }
                         to   { opacity: 1; transform: translateY(0) scale(1); }
+                    }
+
+                    @media (max-width: 640px) {
+                        .notif-panel {
+                            position: fixed;
+                            top: 70px;
+                            left: 12px;
+                            right: 12px;
+                            width: auto;
+                            max-width: none;
+                            transform-origin: top center;
+                        }
                     }
 
                     .notif-panel-header {
