@@ -29,7 +29,11 @@ const notificationSchema = new mongoose.Schema({
     readBy: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
-    }]
+    }],
+    // Track when the last reminder push was sent
+    lastRemindedAt: {
+        type: Date
+    }
 }, {
     timestamps: true
 });

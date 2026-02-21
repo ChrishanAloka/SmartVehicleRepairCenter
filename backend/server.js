@@ -8,7 +8,11 @@ const { errorHandler, notFound } = require('./middleware/error');
 dotenv.config();
 
 // Connect to database
-connectDB();
+connectDB().then(() => {
+    // Start notification reminder job
+    const { startReminderJob } = require('./controllers/notificationController');
+    startReminderJob();
+});
 
 const app = express();
 

@@ -3,9 +3,6 @@ const Notification = require('../models/Notification');
 const User = require('../models/User');
 
 // ─── VAPID setup (lazy) ───────────────────────────────────────────────────────
-// Never call setVapidDetails() at module load — it throws if env vars are absent.
-// Instead call initVapid() lazily, right before any push is sent.
-
 let vapidReady = false;
 
 const initVapid = () => {
@@ -33,9 +30,8 @@ const initVapid = () => {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// Send a push to all subscriptions of one user; prune stale ones
 const pushToUser = async (user, payload) => {
-    if (!initVapid()) return; // VAPID not configured → skip silently
+    if (!initVapid()) return;
     if (!user.pushSubscriptions || user.pushSubscriptions.length === 0) return;
 
     const validSubs = [];
@@ -48,7 +44,7 @@ const pushToUser = async (user, payload) => {
                 console.log(`[Push] Stale subscription removed for user ${user._id}`);
             } else {
                 console.error(`[Push] Send error for user ${user._id}:`, err.message);
-                validSubs.push(sub); // keep on transient errors
+                validSubs.push(sub);
             }
         }
     }
@@ -57,7 +53,6 @@ const pushToUser = async (user, payload) => {
     }
 };
 
-// Get users who should receive a push based on audience
 const getTargetUsers = async (audience) => {
     if (audience === 'all_staff') {
         return await User.find({ isActive: true, pushSubscriptions: { $exists: true, $ne: [] } });
@@ -70,9 +65,6 @@ const getTargetUsers = async (audience) => {
 
 // ─── VAPID public key ─────────────────────────────────────────────────────────
 
-// @desc    Return VAPID public key + whether push is configured
-// @route   GET /api/notifications/vapid-public-key
-// @access  Public
 const getVapidPublicKey = (req, res) => {
     const key = process.env.VAPID_PUBLIC_KEY;
     res.json({
@@ -83,9 +75,6 @@ const getVapidPublicKey = (req, res) => {
 
 // ─── Subscribe / Unsubscribe ──────────────────────────────────────────────────
 
-// @desc    Save a push subscription for the logged-in user
-// @route   POST /api/notifications/subscribe
-// @access  Private
 const subscribe = async (req, res) => {
     try {
         const { subscription } = req.body;
@@ -100,21 +89,14 @@ const subscribe = async (req, res) => {
         if (!alreadyExists) {
             user.pushSubscriptions.push(subscription);
             await user.save();
-            console.log(`[Push] New subscription saved for user ${user.username}`);
-        } else {
-            console.log(`[Push] Subscription already exists for user ${user.username}`);
         }
 
         res.json({ message: 'Subscribed', totalSubscriptions: user.pushSubscriptions.length });
     } catch (error) {
-        console.error('[Push] Subscribe error:', error.message);
         res.status(500).json({ message: error.message });
     }
 };
 
-// @desc    Remove a push subscription for the logged-in user
-// @route   DELETE /api/notifications/subscribe
-// @access  Private
 const unsubscribe = async (req, res) => {
     try {
         const { endpoint } = req.body;
@@ -130,11 +112,6 @@ const unsubscribe = async (req, res) => {
     }
 };
 
-// ─── Push Status (diagnostic) ─────────────────────────────────────────────────
-
-// @desc    Return push subscription status for the logged-in user
-// @route   GET /api/notifications/push-status
-// @access  Private
 const getPushStatus = async (req, res) => {
     try {
         const user = await User.findById(req.user._id).select('pushSubscriptions username');
@@ -142,7 +119,6 @@ const getPushStatus = async (req, res) => {
             vapidConfigured: !!process.env.VAPID_PUBLIC_KEY,
             subscriptionCount: user.pushSubscriptions.length,
             username: user.username,
-            // Show only endpoints (not full keys) for security
             endpoints: user.pushSubscriptions.map(s => s.endpoint?.substring(0, 60) + '...')
         });
     } catch (error) {
@@ -150,48 +126,35 @@ const getPushStatus = async (req, res) => {
     }
 };
 
-// ─── Test Push ────────────────────────────────────────────────────────────────
-
-// @desc    Send a test native push notification to the logged-in user's devices
-// @route   POST /api/notifications/test-push
-// @access  Private
 const testPush = async (req, res) => {
     try {
         if (!initVapid()) {
-            return res.status(503).json({
-                message: 'Push notifications not configured. Set VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, and VAPID_EMAIL environment variables on the server.'
-            });
+            return res.status(503).json({ message: 'Push notifications not configured.' });
         }
 
         const user = await User.findById(req.user._id);
         if (!user.pushSubscriptions || user.pushSubscriptions.length === 0) {
-            return res.status(400).json({
-                message: 'No push subscriptions found for this account. Make sure you have granted notification permission in the app.'
-            });
+            return res.status(400).json({ message: 'No push subscriptions found.' });
         }
 
         const payload = {
             title: '🔔 Test Notification',
-            body: 'Push notifications are working! You will receive alerts here.',
+            body: 'Push notifications are working!',
             icon: '/logo.png',
             badge: '/logo.png',
             tag: 'svrc-test',
-            data: { url: '/', type: 'test' }
+            data: { url: '/?openNotifs=true', type: 'test' }
         };
 
         await pushToUser(user, payload);
         res.json({ message: 'Test push sent', subscriptions: user.pushSubscriptions.length });
     } catch (error) {
-        console.error('[Push] Test push error:', error.message);
         res.status(500).json({ message: error.message });
     }
 };
 
 // ─── Notification CRUD ────────────────────────────────────────────────────────
 
-// @desc    Get notifications for the logged-in user (based on role)
-// @route   GET /api/notifications
-// @access  Private
 const getNotifications = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -215,17 +178,12 @@ const getNotifications = async (req, res) => {
             isRead: n.readBy.some(id => id.toString() === userId.toString())
         }));
 
-        const unreadCount = result.filter(n => !n.isRead).length;
-
-        res.json({ notifications: result, unreadCount });
+        res.json({ notifications: result, unreadCount: result.filter(n => !n.isRead).length });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-// @desc    Mark a single notification as read
-// @route   PUT /api/notifications/:id/read
-// @access  Private
 const markAsRead = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -243,9 +201,6 @@ const markAsRead = async (req, res) => {
     }
 };
 
-// @desc    Mark all notifications as read for the current user
-// @route   PUT /api/notifications/read-all
-// @access  Private
 const markAllAsRead = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -269,17 +224,12 @@ const markAllAsRead = async (req, res) => {
     }
 };
 
-// ─── Internal helper called by bookingController ──────────────────────────────
+// ─── Internal helper ─────────────────────────────────────────────────────────
 
-// Create a DB notification AND send native push to relevant staff
 const createNotification = async ({ type, audience, title, message, bookingId }) => {
     try {
-        // 1. Save to database
         const notif = await Notification.create({ type, audience, title, message, bookingId });
-
-        // 2. Send Web Push to all relevant users who have subscriptions
         const targetUsers = await getTargetUsers(audience);
-        console.log(`[Push] Sending to ${targetUsers.length} user(s) for audience: ${audience}`);
 
         const pushPayload = {
             title,
@@ -288,13 +238,80 @@ const createNotification = async ({ type, audience, title, message, bookingId })
             badge: '/logo.png',
             tag: `notif-${notif._id}`,
             renotify: true,
-            data: { notifId: notif._id, bookingId, type, url: '/' }
+            data: { notifId: notif._id, bookingId, type, url: `/?openNotifs=true&notifId=${notif._id}` }
         };
 
         await Promise.all(targetUsers.map(user => pushToUser(user, pushPayload)));
     } catch (error) {
         console.error('[Push] createNotification error:', error.message);
     }
+};
+
+// ─── Reminder Job ─────────────────────────────────────────────────────────────
+
+/**
+ * Periodically checks for unread notifications and re-pushes them as a reminder.
+ * Intervals: 30 minutes
+ */
+const startReminderJob = () => {
+    console.log('[Reminder] Starting unread notification reminder job (every 30 min)');
+
+    setInterval(async () => {
+        try {
+            // 1. Get all active users with push subscriptions
+            const allUsers = await User.find({
+                isActive: true,
+                pushSubscriptions: { $exists: true, $ne: [] }
+            });
+
+            if (allUsers.length === 0) return;
+
+            // 2. For each user, find their unread notifications
+            for (const user of allUsers) {
+                let audienceFilter;
+                if (user.role === 'admin') {
+                    audienceFilter = { audience: { $in: ['all_staff', 'admin_only'] } };
+                } else {
+                    audienceFilter = { audience: 'all_staff' };
+                }
+
+                // Find unread notifications for this specific user
+                const unreadNotifications = await Notification.find({
+                    ...audienceFilter,
+                    readBy: { $ne: user._id }
+                }).sort({ createdAt: -1 }).limit(3); // Just remind of the latest 3
+
+                if (unreadNotifications.length === 0) continue;
+
+                // 3. Send a summary push or individual pushes
+                // User asked for "push that notifications by the title as remider"
+                for (const notif of unreadNotifications) {
+                    // Throttle: don't remind more than once every 25 mins for the same notif
+                    const now = new Date();
+                    const lastSent = notif.lastRemindedAt || notif.createdAt;
+                    const diffMins = (now - lastSent) / (1000 * 60);
+
+                    if (diffMins < 25) continue;
+
+                    const reminderPayload = {
+                        title: `🔔 Reminder: ${notif.title}`,
+                        body: notif.message,
+                        icon: '/logo.png',
+                        badge: '/logo.png',
+                        tag: `remind-${notif._id}`,
+                        data: { notifId: notif._id, url: `/?openNotifs=true&notifId=${notif._id}` }
+                    };
+
+                    await pushToUser(user, reminderPayload);
+
+                    // Update lastRemindedAt (using findByIdAndUpdate to avoid concurrent save issues)
+                    await Notification.findByIdAndUpdate(notif._id, { lastRemindedAt: now });
+                }
+            }
+        } catch (error) {
+            console.error('[Reminder] Job error:', error.message);
+        }
+    }, 30 * 60 * 1000); // 30 minutes
 };
 
 module.exports = {
@@ -306,5 +323,6 @@ module.exports = {
     getNotifications,
     markAsRead,
     markAllAsRead,
-    createNotification
+    createNotification,
+    startReminderJob
 };

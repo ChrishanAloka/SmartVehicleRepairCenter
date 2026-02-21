@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { notificationAPI } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { registerPushSubscription } from '../context/AuthContext';
@@ -247,13 +248,29 @@ const NotificationBell = () => {
 
     // ─── Actions ──────────────────────────────────────────────────────────────
     const handleMarkOne = async (id, e) => {
-        e.stopPropagation();
+        if (e) e.stopPropagation();
         try {
             await notificationAPI.markRead(id);
             setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
             setUnreadCount(prev => Math.max(0, prev - 1));
         } catch (_) { }
     };
+
+    // ─── URL Trigger (Handle Push Click) ───────────────────────────────────────
+    const location = useLocation();
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('openNotifs') === 'true') {
+            setOpen(true);
+            const notifId = params.get('notifId');
+            if (notifId) {
+                // Mark as read after a small delay
+                setTimeout(() => handleMarkOne(notifId), 1000);
+            }
+        }
+    }, [location.search]);
+
+    // ─── Actions Cont. ─────────────────────────────────────────────────────────
 
     const handleMarkAll = async () => {
         setLoading(true);
@@ -399,7 +416,11 @@ const NotificationBell = () => {
                                                 <div className="notif-item-time">{moment(n.createdAt).fromNow()}</div>
                                             </div>
                                             {!n.isRead && (
-                                                <button className="notif-mark-btn" onClick={(e) => handleMarkOne(n._id, e)}>
+                                                <button
+                                                    className="notif-mark-btn"
+                                                    onClick={(e) => handleMarkOne(n._id, e)}
+                                                    title="Mark as read"
+                                                >
                                                     <FaCheck size={10} />
                                                 </button>
                                             )}
@@ -576,9 +597,10 @@ const NotificationBell = () => {
                         background: #eff6ff; color: #2563eb;
                         display: flex; align-items: center; justify-content: center;
                         cursor: pointer; margin-top: 4px;
-                        transition: background 0.15s, transform 0.15s; opacity: 0;
+                        transition: background 0.15s, transform 0.15s;
+                        opacity: 1; /* Always visible for unread items */
                     }
-                    .notif-item:hover .notif-mark-btn { opacity: 1; }
+                    .notif-item.read .notif-mark-btn { display: none; }
                     .notif-mark-btn:hover { background: #dbeafe; transform: scale(1.1); }
 
                     .notif-panel-footer {
