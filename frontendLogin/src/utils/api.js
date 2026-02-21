@@ -89,7 +89,10 @@ export const settingsAPI = {
 export const notificationAPI = {
     getAll: () => api.get('/notifications'),
     markRead: (id) => api.put(`/notifications/${id}/read`),
-    markAllRead: () => api.put('/notifications/read-all')
+    markAllRead: () => api.put('/notifications/read-all'),
+    getVapidPublicKey: () => api.get('/notifications/vapid-public-key'),
+    subscribePush: (subscription) => api.post('/notifications/subscribe', { subscription }),
+    unsubscribePush: (endpoint) => api.delete('/notifications/subscribe', { data: { endpoint } })
 };
 
 export default api;

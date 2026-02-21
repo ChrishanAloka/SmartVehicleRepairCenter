@@ -7,6 +7,10 @@ export default defineConfig({
         react(),
         VitePWA({
             registerType: 'prompt',
+            // Use injectManifest so we can write our own SW that handles push
+            strategies: 'injectManifest',
+            srcDir: 'src',
+            filename: 'sw.js',
             includeAssets: ['logo.png'],
             manifest: {
                 name: 'Smart Repair Staff Portal',
@@ -21,14 +25,20 @@ export default defineConfig({
                     {
                         src: 'logo.png',
                         sizes: '192x192',
-                        type: 'image/png'
+                        type: 'image/png',
+                        purpose: 'any maskable'
                     },
                     {
                         src: 'logo.png',
                         sizes: '512x512',
-                        type: 'image/png'
+                        type: 'image/png',
+                        purpose: 'any maskable'
                     }
                 ]
+            },
+            devOptions: {
+                enabled: true,
+                type: 'module'
             }
         })
     ],

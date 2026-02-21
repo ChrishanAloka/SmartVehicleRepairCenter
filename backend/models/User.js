@@ -28,6 +28,11 @@ const userSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
+    },
+    // Web Push subscriptions — one per browser/device
+    pushSubscriptions: {
+        type: [mongoose.Schema.Types.Mixed],
+        default: []
     }
 }, {
     timestamps: true
