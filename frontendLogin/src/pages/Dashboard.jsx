@@ -113,7 +113,7 @@ const Dashboard = () => {
             <h2 className="mb-4">Dashboard</h2>
 
             {/* Workshop Status Cards */}
-            <Row className="g-4 mb-4">
+            <Row id="tour-workshop-status" className="g-4 mb-4">
                 <Col md={4}>
                     <Card className="shadow-sm border-0 bg-warning text-dark h-100">
                         <Card.Body className="d-flex align-items-center">
@@ -156,7 +156,7 @@ const Dashboard = () => {
             </Row>
 
             {/* General Statistics Cards */}
-            <Row className="g-4 mb-4">
+            <Row id="tour-general-stats" className="g-4 mb-4">
                 <Col md={6} lg={3}>
                     <Card className="shadow-sm border-0 h-100">
                         <Card.Body>
@@ -238,7 +238,8 @@ const Dashboard = () => {
             <Row className="mb-4 g-4">
                 <Col lg={8}>
                     {/* Recent Bookings */}
-                    <Card className="shadow-sm border-0 h-100">
+                    {/* Tour target: live workshop orders */}
+                    <Card id="tour-live-orders" className="shadow-sm border-0 h-100">
                         <Card.Header className="bg-white py-3 border-0">
                             <div className="d-flex justify-content-between align-items-center">
                                 <h5 className="mb-0 fw-bold d-flex align-items-center">
@@ -308,7 +309,7 @@ const Dashboard = () => {
 
                 <Col lg={4}>
                     {/* Customer Reviews */}
-                    <Card className="shadow-sm border-0 h-100">
+                    <Card id="tour-feedback" className="shadow-sm border-0 h-100">
                         <Card.Header className="bg-white py-3 border-0">
                             <h5 className="mb-0 fw-bold d-flex align-items-center">
                                 <FaCommentAlt className="me-2 text-warning" /> Recent Feedback

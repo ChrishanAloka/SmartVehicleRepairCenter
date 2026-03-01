@@ -68,7 +68,7 @@ const QRScanner = () => {
         <Container className="py-5">
             <Row className="justify-content-center">
                 <Col lg={8}>
-                    <Card className="shadow-lg border-0">
+                    <Card id="tour-qr-scanner" className="shadow-lg border-0">
                         <Card.Header className="bg-primary text-white text-center py-4">
                             <h2 className="mb-0">
                                 <FaQrcode className="me-2" />

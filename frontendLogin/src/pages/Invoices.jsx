@@ -333,14 +333,14 @@ const Invoices = () => {
         <Container fluid className="py-4">
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <h2>Invoices</h2>
-                <Button variant="primary" onClick={handleShowModal}>
+                <Button id="tour-create-invoice" variant="primary" onClick={handleShowModal}>
                     <FaPlus className="me-2" />
                     Create Invoice
                 </Button>
             </div>
 
 
-            <Card className="shadow-sm border-0">
+            <Card id="tour-invoices-table" className="shadow-sm border-0">
                 <Card.Body className="p-0">
                     <div className="table-responsive">
                         <Table hover className="mb-0">

@@ -306,7 +306,7 @@ const CustomerLookup = () => {
                         <h1 className="display-5 fw-bold text-primary mb-2">Customer Service Lookup</h1>
                         <p className="text-muted lead">Track any vehicle's progress and history</p>
                     </div>
-                    <Card className="card-modern border-0">
+                    <Card id="tour-lookup-search" className="card-modern border-0">
                         <Card.Body className="p-4 p-md-5">
                             <Form onSubmit={handleSearch}>
                                 <Form.Group className="mb-4">

@@ -98,12 +98,12 @@ const Customers = () => {
                     <h2 className="fw-bold text-dark mb-1">Customer Management</h2>
                     <p className="text-muted small mb-0">View and manage all registered customers and their vehicles</p>
                 </div>
-                <Badge bg="primary" className="px-3 py-2 rounded-pill">
+                <Badge id="tour-customer-count" bg="primary" className="px-3 py-2 rounded-pill">
                     Total: {customers.length}
                 </Badge>
             </div>
 
-            <Card className="shadow-sm border-0 mb-4">
+            <Card id="tour-customer-search" className="shadow-sm border-0 mb-4">
                 <Card.Body className="p-3">
                     <Row className="align-items-center">
                         <Col md={6}>
@@ -124,7 +124,7 @@ const Customers = () => {
                 </Card.Body>
             </Card>
 
-            <Card className="shadow-sm border-0 overflow-hidden">
+            <Card id="tour-customers-table" className="shadow-sm border-0 overflow-hidden">
                 <Card.Body className="p-0">
                     <div className="table-responsive">
                         <Table hover className="mb-0 align-middle">

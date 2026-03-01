@@ -155,7 +155,7 @@ const TechnicianPortal = () => {
 
 
             {/* Technician Selection */}
-            <Card className="card-modern mb-4">
+            <Card id="tour-tech-select" className="card-modern mb-4">
                 <Card.Body className="p-4">
                     <Row className="align-items-center">
                         <Col md={6}>
@@ -203,7 +203,7 @@ const TechnicianPortal = () => {
             {selectedTechnicianId && (
                 <div className="animate-fade-in">
                     {/* Active Jobs Quick View */}
-                    <Row className="mb-2">
+                    <Row id="tour-tech-summary" className="mb-2">
                         <Col md={12}>
                             <Card className="card-modern bg-primary-gradient text-white border-0 overflow-hidden position-relative">
                                 {/* Decorative circle */}
@@ -248,7 +248,7 @@ const TechnicianPortal = () => {
                     </Row>
 
                     {/* Pending Bookings - Quick Actions */}
-                    <Card className="card-modern mb-4">
+                    <Card id="tour-tech-jobs" className="card-modern mb-4">
                         <Card.Header className="card-header-custom d-flex align-items-center bg-white">
                             <div className="rounded-circle bg-warning bg-opacity-10 p-2 me-3">
                                 <FaClock className="text-warning" />

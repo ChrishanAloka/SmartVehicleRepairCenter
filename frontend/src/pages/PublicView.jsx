@@ -165,7 +165,7 @@ const PublicView = () => {
         <div className="min-vh-100 py-5">
             <Container>
                 {/* Header Section */}
-                <div className="text-center mb-5 animate-fade-in">
+                <div id="tour-public-status" className="text-center mb-5 animate-fade-in">
                     <h1 className="display-4 fw-bold text-primary mb-2 text-uppercase letter-spacing-1">
                         {settings?.shopName || 'Vehicle Service Center'}
                     </h1>
@@ -205,7 +205,7 @@ const PublicView = () => {
                 </div>
 
                 {/* Queue Visualization Section */}
-                <div className="mb-5 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+                <div id="tour-public-queue" className="mb-5 animate-fade-in" style={{ animationDelay: '0.1s' }}>
                     <div className="d-flex align-items-center justify-content-between mb-4">
                         <h3 className="fw-bold text-dark mb-0 border-start border-4 border-primary ps-3">Live Workshop Status</h3>
                         <Badge bg="primary" className="px-3 py-2 rounded-pill shadow-sm">
@@ -236,7 +236,7 @@ const PublicView = () => {
                 </div>
 
                 {/* Technicians Status */}
-                <div className="mb-5 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                <div id="tour-public-team" className="mb-5 animate-fade-in" style={{ animationDelay: '0.2s' }}>
                     <div className="d-flex align-items-center justify-content-between mb-4">
                         <h3 className="fw-bold text-dark mb-0 border-start border-4 border-success ps-3">
                             Our Expert Team

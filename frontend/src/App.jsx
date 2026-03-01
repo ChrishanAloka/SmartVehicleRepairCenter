@@ -10,6 +10,7 @@ import CustomerLookup from './pages/CustomerLookup';
 
 // Components
 import PublicNavbar from './components/PublicNavbar';
+import TourGuide from './components/TourGuide';
 
 // Import Bootstrap CSS
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -21,6 +22,7 @@ function App() {
             <Toaster position="top-right" reverseOrder={false} />
             <Router>
                 <div className="d-flex flex-column min-vh-100">
+                    <TourGuide />
                     <PublicNavbar />
                     <main className="flex-grow-1">
                         <Routes>

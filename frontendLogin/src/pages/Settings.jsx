@@ -135,7 +135,7 @@ const Settings = () => {
             <Row>
                 {/* Shop Information */}
                 <Col lg={6} className="mb-4">
-                    <Card className="shadow-sm border-0 h-100">
+                    <Card id="tour-shop-settings" className="shadow-sm border-0 h-100">
                         <Card.Header className="bg-primary text-white">
                             <h5 className="mb-0">
                                 <FaClock className="me-2" />
@@ -285,7 +285,7 @@ const Settings = () => {
 
                 {/* Holidays Management */}
                 <Col lg={6} className="mb-4">
-                    <Card className="shadow-sm border-0 h-100">
+                    <Card id="tour-holiday-settings" className="shadow-sm border-0 h-100">
                         <Card.Header className="bg-warning text-dark">
                             <h5 className="mb-0">
                                 <FaCalendarAlt className="me-2" />

@@ -170,7 +170,7 @@ const BookingPage = () => {
             <Container className="py-5">
                 <Row className="justify-content-center">
                     <Col md={10} lg={8}>
-                        <Card className="shadow-lg border-0 text-center py-5 px-4">
+                        <Card id="tour-booking-status" className="shadow-lg border-0 text-center py-5 px-4">
                             <Card.Body>
                                 <div className="display-1 text-primary mb-4">
                                     <FaClock />
@@ -254,7 +254,7 @@ const BookingPage = () => {
         <Container className="py-5">
             <Row className="justify-content-center">
                 <Col lg={8}>
-                    <Card className="shadow-lg border-0">
+                    <Card id="tour-booking-form" className="shadow-lg border-0">
                         <Card.Header className="bg-primary text-white">
                             <h3 className="mb-0">Book a Service Appointment</h3>
                         </Card.Header>

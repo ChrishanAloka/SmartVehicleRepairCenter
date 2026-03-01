@@ -1,0 +1,216 @@
+/* ============================================
+   Tour Guide – Custom Shepherd.js Theme
+   Customer-Facing Public Frontend
+   ============================================ */
+
+/* Floating Action Button (FAB) */
+.tour-fab {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, #0d6efd, #6610f2);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(13, 110, 253, 0.35),
+        0 2px 8px rgba(0, 0, 0, 0.12);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: tour-fab-entrance 0.6s ease-out;
+}
+
+.tour-fab:hover {
+    transform: translateY(-3px) scale(1.04);
+    box-shadow: 0 12px 40px rgba(13, 110, 253, 0.45),
+        0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.tour-fab:active {
+    transform: translateY(0) scale(0.97);
+}
+
+.tour-fab-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 1rem;
+    animation: tour-pulse 2s ease-in-out infinite;
+}
+
+@keyframes tour-fab-entrance {
+    0% {
+        opacity: 0;
+        transform: translateY(30px) scale(0.8);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes tour-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 0 8px rgba(255, 255, 255, 0);
+    }
+}
+
+/* ─── Shepherd Step Container ─── */
+.shepherd-element {
+    z-index: 10001 !important;
+    max-width: 420px;
+    border-radius: 16px;
+    overflow: visible;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18),
+        0 4px 20px rgba(13, 110, 253, 0.12);
+    animation: shepherd-slide-in 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes shepherd-slide-in {
+    0% {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ─── Step Content ─── */
+.shepherd-content {
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fff;
+}
+
+/* Gradient accent top bar */
+.shepherd-content::before {
+    content: '';
+    display: block;
+    height: 4px;
+    background: linear-gradient(90deg, #0d6efd, #6610f2, #d63384);
+}
+
+.shepherd-header {
+    background: transparent !important;
+    padding: 20px 24px 4px !important;
+}
+
+.shepherd-title {
+    font-weight: 800 !important;
+    font-size: 1.05rem !important;
+    color: #1a1a2e !important;
+    letter-spacing: -0.3px;
+}
+
+.shepherd-text {
+    padding: 8px 24px 20px !important;
+    font-size: 0.9rem !important;
+    line-height: 1.65 !important;
+    color: #555 !important;
+}
+
+.shepherd-cancel-icon {
+    font-size: 1.5rem !important;
+    color: #aaa !important;
+    transition: color 0.2s;
+}
+
+.shepherd-cancel-icon:hover {
+    color: #333 !important;
+}
+
+/* ─── Footer / Buttons ─── */
+.shepherd-footer {
+    padding: 0 24px 20px !important;
+    border-top: none !important;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.shepherd-button {
+    border-radius: 50px !important;
+    padding: 8px 22px !important;
+    font-weight: 700 !important;
+    font-size: 0.8rem !important;
+    letter-spacing: 0.5px !important;
+    text-transform: uppercase !important;
+    border: none !important;
+    transition: all 0.25s ease !important;
+}
+
+.shepherd-button-secondary {
+    background: #f0f0f5 !important;
+    color: #666 !important;
+}
+
+.shepherd-button-secondary:hover {
+    background: #e2e2ea !important;
+    color: #333 !important;
+}
+
+.shepherd-button-primary,
+.shepherd-button:not(.shepherd-button-secondary) {
+    background: linear-gradient(135deg, #0d6efd, #6610f2) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 14px rgba(13, 110, 253, 0.3) !important;
+}
+
+.shepherd-button-primary:hover,
+.shepherd-button:not(.shepherd-button-secondary):hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(13, 110, 253, 0.4) !important;
+}
+
+/* ─── Overlay / Backdrop ─── */
+.shepherd-modal-overlay-container {
+    z-index: 10000 !important;
+}
+
+/* ─── Arrow ─── */
+.shepherd-arrow::before {
+    background: #fff !important;
+}
+
+/* ─── Target Highlight ─── */
+.shepherd-target {
+    outline: 3px solid rgba(13, 110, 253, 0.35) !important;
+    outline-offset: 6px;
+    border-radius: 12px;
+    transition: outline 0.3s ease;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 576px) {
+    .tour-fab {
+        bottom: 18px;
+        right: 18px;
+        padding: 12px 18px;
+        font-size: 0.8rem;
+    }
+
+    .shepherd-element {
+        max-width: 92vw;
+    }
+}

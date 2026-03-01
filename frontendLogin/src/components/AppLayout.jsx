@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import TopNavbar from './TopNavbar';
+import TourGuide from './TourGuide';
 import { useAuth } from '../context/AuthContext';
 
 const AppLayout = ({ children }) => {
@@ -16,6 +17,7 @@ const AppLayout = ({ children }) => {
                 <div className="flex-grow-1">
                     {children}
                 </div>
+                <TourGuide />
             </div>
         );
     }
@@ -52,6 +54,7 @@ const AppLayout = ({ children }) => {
                     </p>
                 </footer>
             </div>
+            <TourGuide />
         </div>
     );
 };

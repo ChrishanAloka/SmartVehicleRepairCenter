@@ -118,7 +118,7 @@ const Attendance = () => {
                 <Row className="g-4">
                     <Col lg={8} className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
                         {/* Technicians List Card */}
-                        <Card className="card-modern mb-4">
+                        <Card id="tour-attendance-list" className="card-modern mb-4">
                             <Card.Header className="card-header-custom bg-white d-flex justify-content-between align-items-center">
                                 <h5 className="mb-0 fw-bold d-flex align-items-center text-dark">
                                     <FaUsers className="me-2 text-primary" /> Staff Directory
@@ -221,7 +221,7 @@ const Attendance = () => {
 
                     <Col lg={4} className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
                         {/* Search Verify Card */}
-                        <Card className="card-modern mb-4 bg-primary-gradient text-white overflow-hidden border-0">
+                        <Card id="tour-attendance-search" className="card-modern mb-4 bg-primary-gradient text-white overflow-hidden border-0">
                             <Card.Body className="p-4">
                                 <div className="d-flex align-items-center mb-4">
                                     <div className="rounded-circle bg-white bg-opacity-20 p-3 me-3">

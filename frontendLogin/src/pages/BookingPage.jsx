@@ -243,7 +243,7 @@ const BookingPage = () => {
         <Container className="py-5">
             <Row className="justify-content-center">
                 <Col lg={8}>
-                    <Card className="shadow-lg border-0">
+                    <Card id="tour-booking-form" className="shadow-lg border-0">
                         <Card.Header className="bg-primary text-white">
                             <h3 className="mb-0">Book a Service Appointment</h3>
                         </Card.Header>

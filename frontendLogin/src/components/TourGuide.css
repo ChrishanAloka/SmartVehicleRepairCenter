@@ -1,0 +1,346 @@
+/* ============================
+   Tour Guide - Custom Shepherd.js Theme
+   ============================ */
+
+/* Floating Action Button (FAB) */
+.tour-guide-fab {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4),
+        0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    animation: tourFabPulse 3s ease-in-out infinite;
+    letter-spacing: 0.3px;
+    overflow: hidden;
+}
+
+.tour-guide-fab::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s ease;
+}
+
+.tour-guide-fab:hover::before {
+    left: 100%;
+}
+
+.tour-guide-fab:hover {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 12px 40px rgba(99, 102, 241, 0.5),
+        0 6px 16px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #9333ea 100%);
+}
+
+.tour-guide-fab:active {
+    transform: scale(0.98);
+}
+
+.tour-guide-fab svg {
+    font-size: 16px;
+    animation: tourIconBounce 2s ease-in-out infinite;
+}
+
+.tour-fab-label {
+    white-space: nowrap;
+}
+
+@keyframes tourFabPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4), 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    50% {
+        box-shadow: 0 8px 40px rgba(99, 102, 241, 0.6), 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+}
+
+@keyframes tourIconBounce {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-10deg);
+    }
+
+    75% {
+        transform: rotate(10deg);
+    }
+}
+
+/* ============================
+   Shepherd Modal Overlay
+   ============================ */
+.shepherd-modal-overlay-container {
+    fill: rgba(15, 23, 42, 0.65) !important;
+}
+
+/* ============================
+   Shepherd Step Element - Main Container
+   ============================ */
+.shepherd-theme-custom.shepherd-element {
+    background: #fff;
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15),
+        0 12px 28px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(99, 102, 241, 0.1);
+    max-width: 440px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow: hidden;
+}
+
+/* Arrow */
+.shepherd-theme-custom .shepherd-arrow,
+.shepherd-theme-custom .shepherd-arrow::before {
+    border-color: transparent;
+}
+
+.shepherd-theme-custom .shepherd-arrow::before {
+    background: #fff !important;
+    border-radius: 3px;
+}
+
+/* ============================
+   Step Content
+   ============================ */
+.shepherd-theme-custom .shepherd-content {
+    padding: 0;
+}
+
+.shepherd-theme-custom .shepherd-text {
+    padding: 24px 28px 16px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #334155;
+}
+
+/* ============================
+   Tour content inner styles
+   ============================ */
+.tour-content h4 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 12px;
+    letter-spacing: -0.3px;
+}
+
+.tour-content p {
+    color: #475569;
+    margin-bottom: 10px;
+    font-size: 13.5px;
+    line-height: 1.65;
+}
+
+.tour-content ul {
+    padding-left: 18px;
+    margin-bottom: 10px;
+}
+
+.tour-content ul li {
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: #475569;
+    line-height: 1.55;
+}
+
+.tour-content ul li strong {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.tour-content strong {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.tour-tip {
+    background: linear-gradient(135deg, #eff6ff, #e0e7ff);
+    border-left: 3px solid #6366f1;
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    font-size: 12.5px !important;
+    color: #4338ca !important;
+    margin-top: 12px;
+    font-style: italic;
+}
+
+/* ============================
+   Header / Cancel Button
+   ============================ */
+.shepherd-theme-custom .shepherd-header {
+    display: none;
+    /* We use our own header via HTML, hide default */
+}
+
+.shepherd-theme-custom .shepherd-cancel-icon {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 18px;
+    font-weight: 400;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.shepherd-theme-custom .shepherd-cancel-icon:hover {
+    background: #e2e8f0;
+    color: #ef4444;
+    transform: scale(1.1);
+}
+
+/* ============================
+   Footer / Buttons
+   ============================ */
+.shepherd-theme-custom .shepherd-footer {
+    padding: 12px 28px 20px;
+    border-top: none;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.shepherd-theme-custom .shepherd-button {
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.2px;
+}
+
+.shepherd-theme-custom .shepherd-button-primary,
+.shepherd-theme-custom .shepherd-button:not(.shepherd-button-secondary) {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.shepherd-theme-custom .shepherd-button-primary:hover,
+.shepherd-theme-custom .shepherd-button:not(.shepherd-button-secondary):hover {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+    transform: translateY(-1px);
+}
+
+.shepherd-theme-custom .shepherd-button-secondary {
+    background: #f1f5f9;
+    color: #64748b;
+    box-shadow: none;
+}
+
+.shepherd-theme-custom .shepherd-button-secondary:hover {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+/* ============================
+   Step Indicator - Top bar gradient
+   ============================ */
+.shepherd-theme-custom::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7, #ec4899);
+    border-radius: 16px 16px 0 0;
+    z-index: 5;
+}
+
+/* ============================
+   Animations
+   ============================ */
+@keyframes tourSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.shepherd-theme-custom.shepherd-element {
+    animation: tourSlideIn 0.3s ease-out;
+}
+
+/* ============================
+   Responsive
+   ============================ */
+@media (max-width: 576px) {
+    .shepherd-theme-custom.shepherd-element {
+        max-width: calc(100vw - 32px);
+        margin: 0 16px;
+        border-radius: 14px;
+    }
+
+    .shepherd-theme-custom .shepherd-text {
+        padding: 20px 20px 12px;
+    }
+
+    .shepherd-theme-custom .shepherd-footer {
+        padding: 10px 20px 16px;
+    }
+
+    .tour-guide-fab {
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+
+    .tour-content h4 {
+        font-size: 16px;
+    }
+
+    .tour-content p,
+    .tour-content ul li {
+        font-size: 12.5px;
+    }
+}
+
+/* Hide FAB when tour is active */
+.shepherd-enabled .tour-guide-fab {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.5);
+}

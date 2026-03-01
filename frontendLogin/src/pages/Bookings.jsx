@@ -164,7 +164,7 @@ const Bookings = () => {
 
     return (
         <Container fluid className="py-4">
-            <div className="d-flex justify-content-between align-items-center mb-4">
+            <div id="tour-bookings-header" className="d-flex justify-content-between align-items-center mb-4">
                 <h2>
                     <FaCalendarAlt className="me-2" />
                     Bookings Management
@@ -176,7 +176,7 @@ const Bookings = () => {
 
 
             {/* Statistics Cards */}
-            <Row className="g-3 mb-4">
+            <Row id="tour-bookings-stats" className="g-3 mb-4">
                 <Col md={6} lg={3}>
                     <Card className="text-center border-0 shadow-sm">
                         <Card.Body>
@@ -212,7 +212,7 @@ const Bookings = () => {
             </Row>
 
             {/* Filters */}
-            <Card className="shadow-sm border-0 mb-4">
+            <Card id="tour-bookings-filters" className="shadow-sm border-0 mb-4">
                 <Card.Header className="bg-light">
                     <h6 className="mb-0">
                         <FaFilter className="me-2" />
@@ -287,7 +287,7 @@ const Bookings = () => {
             </Card>
 
             {/* Bookings Table */}
-            <Card className="shadow-sm border-0">
+            <Card id="tour-bookings-table" className="shadow-sm border-0">
                 <Card.Body className="p-0">
                     <div className="table-responsive">
                         <Table hover className="mb-0">
